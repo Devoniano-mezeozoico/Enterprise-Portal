@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Intranet enterprise{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div>
+      <div class="logo-area">
+        <img class="brand-logo" src="{{ url_for('static', filename='img/enterprise_logo.png') }}" alt="enterprise">
+        <div class="logo-text">
+          <span>Intranet 2.0</span>
+        </div>
+      </div>
+      <nav class="menu">
+        <a href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>Início</span></a>
+        <a href="{{ url_for('noticias') }}"><i class="fa-solid fa-newspaper"></i><span>Notícias</span></a>
+        <a href="{{ url_for('hub_apps') }}"><i class="fa-solid fa-mobile-screen"></i><span>Hub de Apps</span></a>
+        <a href="{{ url_for('agenda') }}"><i class="fa-solid fa-calendar-days"></i><span>Agenda/Reservas</span></a>
+        <a href="{{ url_for('pops') }}"><i class="fa-solid fa-book"></i><span>POPs</span></a>
+        <a href="{{ url_for('chamados_ti') }}"><i class="fa-solid fa-headset"></i><span>Chamados TI</span></a>
+        <a href="{{ url_for('ia') }}"><i class="fa-solid fa-robot"></i><span>IA enterprise</span></a>
+        {% if usuario_logado and usuario_logado.role in ['admin','superadmin'] %}
+        <div class="menu-sep"></div>
+        <a href="{{ url_for('estoque_ti') }}"><i class="fa-solid fa-boxes-stacked"></i><span>Estoque TI</span></a>
+        <a href="{{ url_for('admin_apps') }}"><i class="fa-solid fa-grid-2"></i><span>Gerenciar Apps</span></a>
+        <a href="{{ url_for('admin_acessos') }}"><i class="fa-solid fa-chart-line"></i><span>Acessos</span></a>
+        {% endif %}
+        {% if usuario_logado and usuario_logado.role == 'superadmin' %}
+        <a href="{{ url_for('admin_usuarios') }}"><i class="fa-solid fa-users-gear"></i><span>Usuários</span></a>
+        {% endif %}
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <div class="server-status"><span class="status-dot"></span> Sistema Online</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span style="font-size:13px;color:var(--text-muted);display:none;" class="breadcrumb">{% block breadcrumb %}{% endblock %}</span>
+      </div>
+      <div class="search-center">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted);"></i>
+          <input type="text" id="globalSearch" placeholder="Pesquisar POPs, notícias, apps…" autocomplete="off">
+        </div>
+      </div>
+      <div class="user-area">
+        <span class="notification"><i class="fa-regular fa-bell"></i></span>
+        <div class="user-info">
+          <div class="avatar">{{ (usuario_logado.nome[:2] if usuario_logado else '??') | upper }}</div>
+          <div style="line-height:1.3;">
+            <div style="font-size:14px;font-weight:600;">{{ usuario_logado.nome if usuario_logado else 'Visitante' }}</div>
+            <div style="font-size:11px;color:var(--text-muted);">{{ usuario_logado.role | capitalize if usuario_logado else '' }}</div>
+          </div>
+        </div>
+        {% if usuario_logado %}
+        <form method="POST" action="{{ url_for('logout') }}">
+          <button class="btn-ghost btn-sm" type="submit"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </header>
+
+    <section class="page-content">
+      {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% if msgs %}
+          <div class="flash-messages">
+            {% for cat, msg in msgs %}
+              <div class="mensagem {{ 'erro' if cat == 'erro' else 'sucesso' }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </section>
+  </main>
+</div>
+</body>
+</html>

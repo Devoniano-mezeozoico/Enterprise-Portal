@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ setor }}{% endblock %}
+{% block content %}
+<div class="page-title">
+    <h1>{{ setor }}</h1>
+    <p>Aplicativos disponíveis neste setor.</p>
+</div>
+
+<div class="apps-grid">
+    {% for app in apps %}
+    <a href="{{ app.url }}" class="card-app">
+        <div class="app-icon">
+            {% if app.icone.startswith('fa-') %}
+                <i class="{{ app.icone }}"></i>
+            {% else %}
+                <div class="emoji-icon">{{ app.icone }}</div>
+            {% endif %}
+        </div>
+        <h3>{{ app.nome }}</h3>
+        <p>{{ app.descricao }}</p>
+        <div class="abrir-app">
+            Abrir <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

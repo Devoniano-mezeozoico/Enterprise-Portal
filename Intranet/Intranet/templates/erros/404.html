@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Página não encontrada{% endblock %}
+{% block content %}
+<div class="card" style="text-align:center;padding:60px;">
+    <i class="fa-solid fa-circle-exclamation" style="font-size:48px;color:#198754;margin-bottom:15px;"></i>
+    <h1>404</h1>
+    <p>A página que você procura não foi encontrada.</p>
+    <br>
+    <a href="{{ url_for('home') }}" class="btn-primary">Voltar ao início</a>
+</div>
+{% endblock %}

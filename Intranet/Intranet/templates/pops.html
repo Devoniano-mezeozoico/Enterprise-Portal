@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}POPs{% endblock %}
+{% block content %}
+<div class="page-title">
+  <h1>POPs</h1>
+  <p>Procedimentos Operacionais Padronizados em formato de leitura interna. A pesquisa busca tambem dentro do conteudo dos arquivos.</p>
+</div>
+
+{% if usuario_logado and usuario_logado.role in ['admin','superadmin'] %}
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-upload"></i> Enviar novo POP</h3>
+  <form method="POST" action="{{ url_for('pops_upload') }}" enctype="multipart/form-data">
+    <div class="form-row">
+      <div class="form-group"><label>Titulo</label><input name="titulo" placeholder="Ex.: Conferencia de NF-e"></div>
+      <div class="form-group">
+        <label>Categoria *</label>
+        <select name="categoria">
+          {% for cat in categorias %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group"><label>Arquivo (PDF, DOCX ou TXT) *</label><input type="file" name="arquivo" accept=".pdf,.docx,.txt" required></div>
+    </div>
+    <button class="btn-primary" type="submit"><i class="fa-solid fa-upload"></i> Enviar POP</button>
+  </form>
+</div>
+{% endif %}
+
+<div style="margin-bottom:16px;">
+  <div class="pops-categorias">
+    <a href="{{ url_for('pops', q=busca) }}" class="cat-tag {{ 'ativa' if not categoria }}">Todos</a>
+    {% for cat in categorias %}
+    <a href="{{ url_for('pops', q=busca, cat=cat) }}" class="cat-tag {{ 'ativa' if categoria == cat }}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+  <form method="GET" action="{{ url_for('pops') }}" style="display:flex;gap:10px;">
+    {% if categoria %}<input type="hidden" name="cat" value="{{ categoria }}">{% endif %}
+    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por titulo ou conteudo do arquivo..."
+           style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:14px;outline:none;">
+    <button class="btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if busca or categoria %}
+    <a href="{{ url_for('pops') }}" class="btn-ghost">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="pops-jornal-grid">
+  {% for pop in pops %}
+  <article class="pop-jornal-card">
+    <span class="editoria">{{ pop.categoria }}</span>
+    <h2>{{ pop.titulo }}</h2>
+    <p>{{ pop.nome_arquivo }} · {{ pop.criado_em[:10] }}</p>
+    <div class="reserva-acoes" style="margin-top:14px;">
+      <a href="{{ url_for('pops_visualizar', pid=pop.id) }}" class="btn-ghost btn-sm" target="_blank">
+        <i class="fa-solid fa-book-open-reader"></i> Ler no site
+      </a>
+      {% if usuario_logado and usuario_logado.role in ['admin','superadmin'] %}
+      <form method="POST" action="{{ url_for('pops_excluir', pid=pop.id) }}" onsubmit="return confirm('Remover?');">
+        <button class="btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i></button>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <div class="card"><p class="muted-text">Nenhum POP {{ 'encontrado' if busca or categoria else 'cadastrado ainda' }}.</p></div>
+  {% endfor %}
+</div>
+{% endblock %}

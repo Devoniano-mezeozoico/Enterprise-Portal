@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ pop.titulo }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <a href="{{ url_for('pops') }}" style="font-size:13px;color:var(--primary);text-decoration:none;">
+    <i class="fa-solid fa-arrow-left"></i> Voltar aos POPs
+  </a>
+</div>
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+    <div>
+      <h2 style="color:var(--sidebar-bg);">{{ pop.titulo }}</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">{{ pop.categoria }} · {{ pop.nome_arquivo }}</p>
+    </div>
+    <a href="{{ url_for('pops_download', pid=pop.id) }}" class="btn-primary btn-sm">
+      <i class="fa-solid fa-download"></i> Baixar
+    </a>
+  </div>
+  {% if pop.conteudo_texto %}
+  <div class="pop-texto">{{ pop.conteudo_texto }}</div>
+  {% else %}
+  <p style="color:var(--text-muted);">Não foi possível extrair o texto deste arquivo. Use o botão Baixar para abrir.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+│   .env
+│   app.py
+│   auth.py
+│   README.md
+│   requirements.txt
+│
+├───ai
+│       ollama.py
+│       prompts.py
+│       teste_ai.py
+│       __init__.py
+│
+├───apps
+│   │   __init__.py
+│   │
+│   ├───autonomo_rpa
+│   │   │   routes.py
+│   │   │   service.py
+│   │   │   __init__.py
+│   │   │
+│   │   └───templates
+│   │       └───autonomo_rpa
+│   │               index.html
+│   │
+│   ├───fiscal
+│   │   │   routes.py
+│   │   │   __init__.py
+│   │   │
+│   │   └───templates
+│   │       └───fiscal
+│   │               dashboard.html
+│   │
+│   ├───gerador_rpa
+│   │   │   routes.py
+│   │   │   service.py
+│   │   │   __init__.py
+│   │   │
+│   │   └───templates
+│   │       └───gerador_rpa
+│   │               index.html
+│   │
+│   ├───reservas
+│   │       routes.py
+│   │       __init__.py
+│   │
+│   └───rh
+│           routes.py
+│           __init__.py
+│
+├───database
+│   │   __init__.py
+│   │
+│   ├───models
+│   │       agenda.py
+│   │       chamados_ti.py
+│   │       estoque_ti.py
+│   │       hub_apps.py
+│   │       noticias.py
+│   │       pops.py
+│   │       reservas.py
+│   │       salas.py
+│   │       usuarios.py
+│   │       __init__.py
+│   │
+│   └───scripts
+│           console_db.py
+│           criar_banco.py
+│
+├───logs
+│       .gitkeep
+│
+├───static
+│   │   style.css
+│   │
+│   ├───img
+│   │       favicon.ico
+│   │       enterprise_logo.png
+│   │       logo.png
+│   │
+│   ├───js
+│   │       reservas.js
+│   │
+│   └───uploads
+│       │   .gitkeep
+│       │
+│       ├───noticias
+│       │       .gitkeep
+│       │
+│       └───pops
+│               .gitkeep
+│
+└───templates
+    │   admin_acessos.html
+    │   admin_apps.html
+    │   admin_usuarios.html
+    │   agenda.html
+    │   apps.html
+    │   base.html
+    │   chamados_ti.html
+    │   estoque_ti.html
+    │   hub_apps.html
+    │   ia.html
+    │   index.html
+    │   login.html
+    │   noticias.html
+    │   noticia_detalhe.html
+    │   pops.html
+    │   pop_visualizar.html
+    │   reservas.html
+    │   setores.html
+    │
+    └───erros
+            404.html
+            500.html
