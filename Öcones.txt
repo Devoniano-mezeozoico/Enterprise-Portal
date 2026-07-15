@@ -1,0 +1,42 @@
+Principais que estamos usando:
+Início:              fa-solid fa-house
+Notícias:            fa-solid fa-newspaper
+Hub de Apps:         fa-solid fa-mobile-screen
+Agenda/Reservas:     fa-solid fa-calendar-days
+Chat:                fa-solid fa-comments
+POPs:                fa-solid fa-book
+Chamados TI:         fa-solid fa-headset
+IA Corporativa:             fa-solid fa-robot
+Estoque TI:          fa-solid fa-boxes-stacked
+Atendimentos:        fa-solid fa-chart-simple
+Honeypot:            fa-solid fa-fingerprint
+Gerenciar Apps:      fa-solid fa-grid-2
+Acessos:             fa-solid fa-chart-line
+Usuários:            fa-solid fa-users-gear
+Sair:                fa-solid fa-right-from-bracket
+Outros bons para novos apps:
+Dashboard:           fa-solid fa-gauge
+Fiscal/Notas:        fa-solid fa-file-invoice-dollar
+RH/Treinamentos:     fa-solid fa-graduation-cap
+RPA/Automação:       fa-solid fa-gears
+Exportar:            fa-solid fa-file-export
+Upload:              fa-solid fa-upload
+Download:            fa-solid fa-download
+Relatórios:          fa-solid fa-chart-column
+Configurações:       fa-solid fa-gear
+Segurança:           fa-solid fa-shield-halved
+Banco de dados:      fa-solid fa-database
+Logs:                fa-solid fa-file-lines
+Backups:             fa-solid fa-server
+Tickets:             fa-solid fa-ticket
+Usuário:             fa-solid fa-user
+Grupo:               fa-solid fa-users
+Editar:              fa-solid fa-pen
+Excluir:             fa-solid fa-trash
+Salvar:              fa-solid fa-floppy-disk
+Buscar:              fa-solid fa-magnifying-glass
+Ver:                 fa-solid fa-eye
+Calendário:          fa-solid fa-calendar
+Relógio:             fa-solid fa-clock
+Alerta:              fa-solid fa-triangle-exclamation
+Sucesso/OK:          fa-solid fa-circle-check

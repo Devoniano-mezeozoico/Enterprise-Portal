@@ -1,0 +1,32 @@
+PACOTE CORRIGIDO - PORTAL CORPORATIVO
+
+Este pacote deve ser usado como codigo do portal.
+
+Nao substitua o banco real do backup por um banco vazio.
+Antes de subir em producao, mantenha/restaure do seu backup:
+
+- database/intranet.db
+- static/uploads/
+- logs/ se quiser preservar historico
+
+O codigo possui migracoes aditivas. Quando iniciar com o banco real existente,
+ele adiciona somente as colunas novas necessarias:
+
+- hub_apps.setores_liberados
+- eventos_agenda.tipo
+
+Tambem cria o app ADF no Hub Apps apenas se ainda nao existir.
+
+Como configurar permissoes dos Apps:
+- Entre em Gerenciar Apps.
+- Em "Liberado para", informe os setores separados por virgula.
+- Exemplos: TI,Fiscal ou RH,Administrativo.
+- Para liberar para todos, use Todos.
+
+ADF:
+- O app ADF e criado com URL /apps/adf se ADF_URL nao estiver configurada.
+- Se souber a URL final, edite o app ADF em Gerenciar Apps ou configure ADF_URL no ambiente.
+
+Indicadores:
+- A tela inicial mostra atendimentos apenas do setor do usuario logado.
+- Se o usuario estiver sem setor cadastrado, os indicadores ficam vazios para evitar vazamento de outros setores.
