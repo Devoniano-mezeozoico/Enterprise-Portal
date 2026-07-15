@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<div class="page-title">
+  <h1>Gerenciar Usuarios</h1>
+  <p>Papeis: comum, recepcao, admin e superadmin.</p>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;">Novo Usuario</h3>
+  <form method="POST">
+    <input type="hidden" name="acao" value="criar">
+    <div class="form-row">
+      <div class="form-group"><label>Nome</label><input name="nome" required></div>
+      <div class="form-group"><label>E-mail</label><input type="email" name="email" required></div>
+      <div class="form-group"><label>Senha</label><input type="password" name="senha" required minlength="6"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Setor</label><input name="setor" placeholder="Ex.: TI, Fiscal, RH"></div>
+      <div class="form-group">
+        <label>Local de trabalho</label>
+        <select name="unidade_id">
+          <option value="">Não definida</option>
+          {% for unidade in unidades %}<option value="{{ unidade.id }}">{{ unidade.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Papel</label>
+        <select name="role">
+          {% for p in papeis %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="justify-content:flex-end;">
+        <button class="btn-primary" type="submit">Criar Usuario</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div style="overflow-x:auto;">
+    <table class="tabela-acessos">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Setor</th>
+          <th>Local de trabalho</th>
+          <th>Papel</th>
+          <th>Nova senha</th>
+          <th>Status</th>
+          <th>Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        {% set form_id = 'formUsuario' ~ u.id %}
+        <tr>
+          <td><input class="table-input" name="nome" form="{{ form_id }}" value="{{ u.nome }}" required></td>
+          <td><input class="table-input" type="email" name="email" form="{{ form_id }}" value="{{ u.email }}" required></td>
+          <td><input class="table-input" name="setor" form="{{ form_id }}" value="{{ u.setor or '' }}" placeholder="Setor"></td>
+          <td>
+            {% set unidade_atual = unidades_por_usuario.get(u.id) %}
+            <select class="table-input" name="unidade_id" form="{{ form_id }}">
+              <option value="">Não definida</option>
+              {% for unidade in unidades %}
+              <option value="{{ unidade.id }}" {{ 'selected' if unidade_atual and unidade_atual.id == unidade.id }}>{{ unidade.nome }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td>
+            <select class="table-input" name="role" form="{{ form_id }}">
+              {% for p in papeis %}
+              <option value="{{ p }}" {{ 'selected' if p == u.role }}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td><input class="table-input" type="password" name="senha" form="{{ form_id }}" minlength="6" placeholder="Manter atual"></td>
+          <td>{{ "Ativo" if u.ativo else "Inativo" }}</td>
+          <td>
+            <div class="table-actions">
+              <form id="{{ form_id }}" method="POST">
+                <input type="hidden" name="acao" value="atualizar">
+                <input type="hidden" name="usuario_id" value="{{ u.id }}">
+                <button class="btn-primary btn-sm" type="submit"><i class="fa-solid fa-floppy-disk"></i></button>
+              </form>
+              <form method="POST">
+                <input type="hidden" name="acao" value="alternar_status">
+                <input type="hidden" name="usuario_id" value="{{ u.id }}">
+                <input type="hidden" name="ativo" value="{{ 0 if u.ativo else 1 }}">
+                <button class="{{ 'btn-danger' if u.ativo else 'btn-primary' }} btn-sm" type="submit">
+                  {{ "Desativar" if u.ativo else "Ativar" }}
+                </button>
+              </form>
+              <form method="POST" onsubmit="return confirm('Remover logicamente este usuário? O registro e o histórico serão preservados.');">
+                <input type="hidden" name="acao" value="excluir">
+                <input type="hidden" name="usuario_id" value="{{ u.id }}">
+                <button class="btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

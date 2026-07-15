@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ titulo or "Admin Console" }}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="fake-admin-console">
+  <aside class="fake-sidebar">
+    <h2>Admin Console</h2>
+    <span>{{ fake_user or default_admin_email }}</span>
+    <nav>
+      <a href="{{ url_for('honeypot_dashboard') }}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+      <a href="{{ url_for('honeypot_users') }}"><i class="fa-solid fa-users"></i> Usuarios</a>
+      <a href="{{ url_for('honeypot_tickets') }}"><i class="fa-solid fa-ticket"></i> Tickets</a>
+      <a href="{{ url_for('honeypot_logs') }}"><i class="fa-solid fa-file-lines"></i> Logs</a>
+      <a href="{{ url_for('honeypot_backups') }}"><i class="fa-solid fa-database"></i> Backups</a>
+      <a href="{{ url_for('honeypot_database') }}"><i class="fa-solid fa-server"></i> Database</a>
+      <a href="{{ url_for('honeypot_logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Sair</a>
+    </nav>
+  </aside>
+  <main class="fake-main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

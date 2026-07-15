@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Atendimentos{% endblock %}
+{% block content %}
+<div class="page-title">
+  <h1>Indicadores de Atendimentos</h1>
+  <p>Visao gerencial por setor, colaboradores e tempos de atendimento.</p>
+</div>
+
+{% if pode_gerenciar_atendimentos %}
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-file-arrow-up"></i> Atualizar indicadores</h3>
+  <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="setor" value="{{ setor_selecionado }}">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Planilha Excel</label>
+        <input type="file" name="arquivo" accept=".xlsx,.xls" required>
+      </div>
+      <div class="form-group">
+        <label>Unidade desta importação</label>
+        <select name="unidade_id">
+          <option value="">Compartilhada / não definida</option>
+          {% for unidade in unidades %}<option value="{{ unidade.id }}">{{ unidade.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="justify-content:flex-end;">
+        <button class="btn-primary" type="submit"><i class="fa-solid fa-upload"></i> Processar</button>
+      </div>
+    </div>
+    <p class="muted-text">
+      Antes de cada nova importação, a base atual é copiada para o histórico. Registros antigos não recebem unidade automaticamente.
+    </p>
+  </form>
+</div>
+{% endif %}
+
+<div class="card gerencial-filter-card">
+  <form method="GET" class="form-row gerencial-filter-form">
+    <div class="form-group">
+      <label>Setor</label>
+      <select name="setor">
+        <option value="">Todos os setores</option>
+        {% for setor in setores_indicadores %}
+        <option value="{{ setor }}" {% if setor == setor_selecionado %}selected{% endif %}>{{ setor }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="justify-content:flex-end;">
+      <button class="btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Aplicar filtro</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-table"></i> Lista da planilha</h3>
+  <div style="overflow-x:auto;">
+    <table class="tabela-acessos">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Departamento</th>
+          <th>Qtd. de Atendimentos</th>
+          <th>Tempo Medio 1a Resposta</th>
+          <th>Satisfeito</th>
+          <th>Nao satisfeito</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in metricas %}
+        <tr>
+          <td>{{ item.nome }}</td>
+          <td>{{ item.departamento }}</td>
+          <td>{{ item.qtd_atendimentos }}</td>
+          <td>{{ item.tempo_medio_formatado }}</td>
+          <td>
+            {{ item.satisfeitos or 0 }}
+            {% if item.total_pesquisa %}
+            <small class="muted-inline">({{ "%.1f"|format(item.satisfacao_percentual or 0) }}%)</small>
+            {% endif %}
+          </td>
+          <td>
+            {{ item.nao_satisfeitos or 0 }}
+            {% if item.total_pesquisa %}
+            <small class="muted-inline">({{ "%.1f"|format(100 - (item.satisfacao_percentual or 0)) }}%)</small>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">Nenhum dado encontrado para este filtro.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<section class="gerencial-kpi-grid">
+  <article class="card home-indicator-card">
+    <h3><i class="fa-solid fa-people-group"></i> Colaboradores</h3>
+    <strong>{{ resumo.pessoas }}</strong>
+    <span>{{ setor_selecionado or "Todos os setores" }}</span>
+  </article>
+  <article class="card home-indicator-card">
+    <h3><i class="fa-solid fa-chart-column"></i> Qtd. de atendimentos</h3>
+    <strong>{{ resumo.total }}</strong>
+    <span>{{ setor_selecionado or "Todos os setores" }}</span>
+    <div class="metric-delta {{ resumo.comparativos.qtd.direcao }}">
+      <i class="{{ resumo.comparativos.qtd.icone }}"></i>
+      {{ resumo.comparativos.qtd.texto }}
+    </div>
+  </article>
+  <article class="card home-indicator-card">
+    <h3><i class="fa-solid fa-clock"></i> Tempo medio</h3>
+    <strong>{{ resumo.tempo_medio_formatado }}</strong>
+    <span>{{ setor_selecionado or "Todos os setores" }}</span>
+    <div class="metric-delta {{ resumo.comparativos.tempo.direcao }}">
+      <i class="{{ resumo.comparativos.tempo.icone }}"></i>
+      {{ resumo.comparativos.tempo.texto }}
+    </div>
+  </article>
+  <article class="card home-indicator-card">
+    <h3><i class="fa-solid fa-face-smile"></i> Satisfacao</h3>
+    <strong>{{ resumo.satisfacao_texto }}</strong>
+    <span>{{ resumo.satisfeitos }} satisfeitos / {{ resumo.nao_satisfeitos }} nao satisfeitos</span>
+    <div class="metric-delta {{ resumo.comparativos.satisfacao.direcao }}">
+      <i class="{{ resumo.comparativos.satisfacao.icone }}"></i>
+      {{ resumo.comparativos.satisfacao.texto }}
+    </div>
+  </article>
+</section>
+
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:12px;"><i class="fa-solid fa-circle-info"></i> Resumo da base</h3>
+  <div class="metric-summary">
+    {% if resumo.ultima %}
+    <span><strong>{{ resumo.ultima.tipo_origem }}</strong> {{ resumo.ultima.arquivo_origem }}</span>
+    <span>{{ resumo.ultima.atualizado_em }}</span>
+    {% else %}
+    <span>Nenhuma planilha processada ainda.</span>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

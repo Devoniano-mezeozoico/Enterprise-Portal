@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ noticia.titulo }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <a href="{{ url_for('home') }}" style="font-size:13px;color:var(--primary);text-decoration:none;">
+    <i class="fa-solid fa-arrow-left"></i> Voltar ao inicio
+  </a>
+</div>
+
+<div class="card">
+  <h2 style="color:var(--sidebar-bg);margin-bottom:8px;">{{ noticia.titulo }}</h2>
+  <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">
+    {{ noticia.autor }} · {{ noticia.criado_em[:10] }}
+    {% if noticia.nome_anexo and not anexo_eh_imagem %}
+    · <a href="{{ url_for('noticias_anexo', nid=noticia.id) }}" class="btn-primary btn-sm" style="margin-left:8px;">
+        <i class="fa-solid fa-paperclip"></i> Baixar {{ noticia.nome_anexo }}
+      </a>
+    {% endif %}
+  </div>
+  {% if noticia.resumo %}
+  <p style="font-size:15px;font-weight:500;margin-bottom:16px;color:#444;">{{ noticia.resumo }}</p>
+  {% endif %}
+  <div style="font-size:14px;line-height:1.8;white-space:pre-wrap;">{{ noticia.conteudo }}</div>
+
+  {% if noticia.nome_anexo and anexo_eh_imagem %}
+  <figure class="noticia-imagem-final">
+    <img src="{{ url_for('noticias_midia', nid=noticia.id) }}" alt="{{ noticia.nome_anexo }}">
+    <figcaption>{{ noticia.nome_anexo }}</figcaption>
+  </figure>
+  {% endif %}
+</div>
+{% endblock %}

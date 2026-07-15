@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Login | {{ app_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f5132,#198754);">
+    <div class="card" style="width:380px;">
+        <div style="text-align:center;margin-bottom:20px;">
+            <div class="logo-circle" style="margin:0 auto 10px;">{{ company_initial }}</div>
+            <h2 style="color:#0f5132;">{{ app_name }}</h2>
+            <p style="color:#666;font-size:13px;">Entre com seu e-mail corporativo.</p>
+        </div>
+
+        {% with mensagens = get_flashed_messages(with_categories=true) %}
+            {% if mensagens %}
+                <div class="flash-messages">
+                    {% for categoria, mensagem in mensagens %}
+                    <div class="mensagem {{ 'erro' if categoria == 'erro' else 'sucesso' }}">{{ mensagem }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" name="email" required autofocus>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" name="senha" required>
+            </div>
+            <button class="btn-primary" type="submit" style="width:100%;">Entrar</button>
+        </form>
+    </div>
+</body>
+</html>

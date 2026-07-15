@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Hub de Apps{% endblock %}
+{% block content %}
+<div class="page-title">
+  <h1>Hub de Aplicativos</h1>
+  <p>Acesse qualquer sistema da empresa com um clique.</p>
+</div>
+
+{% if not por_setor %}
+<div class="card">
+  <p style="color:var(--text-muted);">Nenhum aplicativo cadastrado ainda.
+    {% if usuario_logado and usuario_logado.role in ['admin','superadmin'] %}
+    <a href="{{ url_for('admin_apps') }}">Cadastre o primeiro app.</a>
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% for setor in setores %}
+<div class="setor-section">
+  <div class="setor-label">{{ setor }}</div>
+  <div class="apps-grid">
+    {% for ap in por_setor[setor] %}
+    <a href="{{ ap.url }}" class="card-app" target="_blank" rel="noopener">
+      <div class="app-icon"><i class="{{ ap.icone }}"></i></div>
+      <h3>{{ ap.nome }}</h3>
+      <p>{{ ap.descricao }}</p>
+      <div class="abrir-app">Abrir <i class="fa-solid fa-arrow-right"></i></div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

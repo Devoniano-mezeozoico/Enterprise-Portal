@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Chamados TI | {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <h1>Chamados TI</h1>
+  <p>{{ "Fila geral para atendimento dos chamados." if admin_ti else "Registre seus chamados e acompanhe o andamento por aqui." }}</p>
+</div>
+
+<div class="ti-grid">
+  <div class="card">
+    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-circle-plus"></i> Novo chamado</h3>
+    <p class="muted-text" style="margin-bottom:14px;">
+      <i class="fa-solid fa-location-dot"></i>
+      Local de trabalho: <strong>{{ unidade_usuario.nome if unidade_usuario else "Não definido" }}</strong>
+    </p>
+    <form method="POST">
+      <div class="form-group">
+        <label>Titulo</label>
+        <input name="titulo" required placeholder="Ex.: Computador sem rede">
+      </div>
+      <div class="form-group">
+        <label>Descricao do problema</label>
+        <textarea name="descricao" rows="5" required placeholder="Conte o que aconteceu, equipamento afetado e urgencia."></textarea>
+      </div>
+      <div class="form-row form-row-2">
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select name="prioridade">
+            <option value="baixa">Baixa</option>
+            <option value="normal" selected>Normal</option>
+            <option value="alta">Alta</option>
+            <option value="urgente">Urgente</option>
+          </select>
+        </div>
+        <div class="form-group" style="justify-content:flex-end;">
+          <button class="btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Registrar chamado</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-users-gear"></i> Responsaveis TI</h3>
+    <div class="responsaveis-lista">
+      {% for nome in responsaveis %}
+      <span><i class="fa-solid fa-user-check"></i> {{ nome }}</span>
+      {% endfor %}
+    </div>
+    <p class="muted-text">Admins e superadmins enxergam todos os chamados e podem responder. Usuarios comuns veem apenas os chamados que abriram.</p>
+  </div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-list-check"></i> {{ "Fila de chamados" if admin_ti else "Meus chamados" }}</h3>
+  <div class="chamados-lista">
+    {% for chamado in chamados %}
+    <article class="chamado-card status-{{ chamado.status }}">
+      <div class="chamado-topo">
+        <div>
+          <div class="chamado-tags">
+            <span class="tag-status">{{ chamado.status.replace('_', ' ') }}</span>
+            <span class="tag-prioridade">{{ chamado.prioridade }}</span>
+            {% set local_chamado = unidades_chamados.get(chamado.id|string) %}
+            <span><i class="fa-solid fa-location-dot"></i> {{ local_chamado.unidade_nome if local_chamado and local_chamado.unidade_id else "Não definido" }}</span>
+          </div>
+          <h2>{{ chamado.titulo }}</h2>
+          <p class="muted-text">Aberto por {{ chamado.usuario_nome }} em {{ chamado.criado_em }}</p>
+        </div>
+        <div class="chamado-tempos">
+          <span><strong>Resposta:</strong> {{ tempo_resposta(chamado) or "Aguardando" }}</span>
+          <span><strong>Resolucao:</strong> {{ tempo_resolucao(chamado) or "Em aberto" }}</span>
+        </div>
+      </div>
+      <p class="chamado-descricao">{{ chamado.descricao }}</p>
+
+      {% if chamado.resposta %}
+      <div class="chamado-resposta">
+        <strong>{{ chamado.responsavel or "TI" }} respondeu:</strong>
+        <p>{{ chamado.resposta }}</p>
+      </div>
+      {% endif %}
+
+      {% if admin_ti %}
+      <form method="POST" action="{{ url_for('chamados_ti_atualizar', chamado_id=chamado.id) }}" class="chamado-admin-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Responsavel</label>
+            <select name="responsavel" required>
+              {% for r in responsaveis %}
+              <option value="{{ r }}" {{ "selected" if chamado.responsavel == r }}>{{ r }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select name="status">
+              {% for st in status_opcoes %}
+              <option value="{{ st }}" {{ "selected" if chamado.status == st }}>{{ st.replace('_', ' ') }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group" style="justify-content:flex-end;">
+            <button class="btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Resposta / observacao do TI</label>
+          <textarea name="resposta" rows="3">{{ chamado.resposta or "" }}</textarea>
+        </div>
+      </form>
+      <form method="POST" action="{{ url_for('chamados_ti_excluir', chamado_id=chamado.id) }}" onsubmit="return confirm('Excluir este chamado?');">
+        <button class="btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Excluir</button>
+      </form>
+      {% endif %}
+    </article>
+    {% else %}
+    <p class="muted-text">Nenhum chamado registrado ainda.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

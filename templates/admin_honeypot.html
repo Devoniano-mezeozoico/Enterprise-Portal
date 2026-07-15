@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Honeypot{% endblock %}
+{% block content %}
+<div class="page-title">
+  <h1>Honeypot</h1>
+  <p>Analise de tentativas em rotas-isca como /admin, /painel, /wp-admin, /phpmyadmin e /admin_painel.</p>
+</div>
+
+<div class="honeypot-grid">
+  <section class="card">
+    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-layer-group"></i> Niveis detectados</h3>
+    <div class="honeypot-levels">
+      {% for item in resumo_niveis %}
+      <div class="honeypot-level nivel-{{ item.nivel or 'indefinido' }}">
+        <span>{{ item.nivel or 'indefinido' }}</span>
+        <strong>{{ item.total }}</strong>
+      </div>
+      {% else %}
+      <p class="muted-text">Nenhuma tentativa registrada ainda.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-route"></i> Rotas mais acessadas</h3>
+    <div class="honeypot-route-list">
+      {% for rota in top_rotas %}
+      <div>
+        <span>{{ rota.rota }}</span>
+        <strong>{{ rota.total }}</strong>
+      </div>
+      {% else %}
+      <p class="muted-text">Sem acessos nas rotas-isca.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-network-wired"></i> IPs mais insistentes</h3>
+  <div style="overflow-x:auto;">
+    <table class="tabela-acessos">
+      <thead>
+        <tr><th>IP</th><th>Pais</th><th>Tentativas</th><th>Niveis</th><th>Ultima tentativa</th></tr>
+      </thead>
+      <tbody>
+        {% for ip in top_ips %}
+        <tr>
+          <td>{{ ip.ip }}</td>
+          <td>{{ ip.pais }}</td>
+          <td>{{ ip.total }}</td>
+          <td>{{ ip.niveis }}</td>
+          <td>{{ ip.ultimo }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">Nenhum IP registrado ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-clock-rotate-left"></i> Ultimas tentativas</h3>
+  <div style="overflow-x:auto;">
+    <table class="tabela-acessos honeypot-table">
+      <thead>
+        <tr>
+          <th>Data/Hora</th>
+          <th>Nivel</th>
+          <th>IP</th>
+          <th>Rota</th>
+          <th>Metodo</th>
+          <th>Usuario tentado</th>
+          <th>Senha len.</th>
+          <th>Referer</th>
+          <th>User-Agent</th>
+          <th>Motivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tentativas %}
+        <tr>
+          <td>{{ t.criado_em }}</td>
+          <td><span class="nivel-chip nivel-{{ t.nivel or 'indefinido' }}">{{ t.nivel or 'indefinido' }}</span></td>
+          <td>{{ t.ip }}<br><small>{{ t.pais }}</small></td>
+          <td title="{{ t.caminho_completo }}">{{ t.rota }}</td>
+          <td>{{ t.metodo }}</td>
+          <td>{{ t.email_tentado or '-' }}</td>
+          <td>{{ t.senha_len }}</td>
+          <td class="cell-truncate" title="{{ t.referer }}">{{ t.referer or '-' }}</td>
+          <td class="cell-truncate" title="{{ t.user_agent }}">{{ t.user_agent }}</td>
+          <td class="cell-truncate" title="{{ t.motivo }}">{{ t.motivo }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="10">Nenhuma tentativa registrada ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

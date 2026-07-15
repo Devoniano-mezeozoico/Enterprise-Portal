@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ titulo }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="fake-admin-body">
+  <form method="POST" class="fake-login-card" autocomplete="off">
+    <h1>{{ titulo }}</h1>
+    <p>Acesso administrativo restrito.</p>
+    <label for="email">Usuario</label>
+    <input id="email" name="email" type="text" autocomplete="off" autofocus>
+    <label for="senha">Senha</label>
+    <input id="senha" name="senha" type="password" autocomplete="off">
+    <button type="submit">Entrar</button>
+    {% if erro %}<div class="fake-login-error">Sessao validada parcialmente. Reautenticando...</div>{% endif %}
+  </form>
+</body>
+</html>

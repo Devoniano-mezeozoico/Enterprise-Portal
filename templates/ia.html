@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ ai_assistant_name }}{% endblock %}
+{% block content %}
+<div class="page-title">
+    <h1><i class="fa-solid fa-robot"></i> {{ ai_assistant_name }}</h1>
+    <p>Assistente virtual integrado ao Ollama.</p>
+</div>
+
+<div class="card">
+    <div id="chat-container">
+        <div class="mensagem ia">
+            <strong>{{ ai_assistant_name }}:</strong>
+            Olá! Como posso ajudar?
+        </div>
+    </div>
+    <div class="chat-input">
+        <input type="text" id="pergunta" placeholder="Digite sua pergunta..." autocomplete="off">
+        <button id="btnEnviar">Enviar</button>
+    </div>
+</div>
+
+<script>
+const perguntaInput = document.getElementById("pergunta");
+const btnEnviar = document.getElementById("btnEnviar");
+const chatContainer = document.getElementById("chat-container");
+const assistenteNome = {{ ai_assistant_name|tojson }};
+
+async function enviarPergunta() {
+    const pergunta = perguntaInput.value.trim();
+    if (!pergunta) {
+        return;
+    }
+
+    adicionarMensagem("Você", pergunta, "usuario");
+    perguntaInput.value = "";
+    adicionarMensagem(assistenteNome, "Pensando...", "ia", true);
+
+    try {
+        const resposta = await fetch("{{ url_for('api_ia') }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pergunta: pergunta })
+        });
+        const dados = await resposta.json();
+        removerPensando();
+
+        if (dados.sucesso) {
+            adicionarMensagem(assistenteNome, dados.resposta, "ia");
+        } else {
+            adicionarMensagem("Erro", dados.erro, "erro");
+        }
+    } catch (erro) {
+        removerPensando();
+        adicionarMensagem("Erro", "Falha ao conectar com a IA.", "erro");
+    }
+}
+
+function adicionarMensagem(autor, texto, tipo, pensando = false) {
+    const div = document.createElement("div");
+    div.className = "mensagem " + tipo;
+    if (pensando) {
+        div.id = "pensando";
+    }
+    div.innerHTML = `<strong>${autor}:</strong><br>${texto}`;
+    chatContainer.appendChild(div);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function removerPensando() {
+    const pensando = document.getElementById("pensando");
+    if (pensando) {
+        pensando.remove();
+    }
+}
+
+btnEnviar.addEventListener("click", enviarPergunta);
+perguntaInput.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+        enviarPergunta();
+    }
+});
+</script>
+{% endblock %}

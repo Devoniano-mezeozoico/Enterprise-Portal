@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Chat | {{ app_name }}{% endblock %}
+{% block content %}
+<div class="chat-fullscreen">
+  <div class="chat-header">
+    <div>
+      <h1>Chat</h1>
+      <p>Conversa interna da intranet</p>
+    </div>
+    <div class="chat-header-actions">
+      <span class="chat-status-pill"><i class="fa-solid fa-circle"></i> Atualizando</span>
+      {% if pode_ver_apagadas %}
+      <span class="chat-admin-pill"><i class="fa-solid fa-shield-halved"></i> Admin: apagadas visiveis</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <section class="chat-room" data-user-id="{{ usuario_logado.id }}" data-user-role="{{ usuario_logado.role }}">
+    <div class="chat-messages" id="chatMessages">
+      {% for msg in mensagens %}
+      <article class="chat-message {{ 'apagada' if msg.apagada else '' }} {{ 'minha' if usuario_logado and msg.usuario_id == usuario_logado.id else '' }}">
+        <div class="chat-message-head">
+          <strong>{{ msg.usuario_nome }}</strong>
+          <span>{{ msg.criado_em }}</span>
+        </div>
+        {% if msg.apagada %}
+          {% if pode_ver_apagadas %}
+          <p>{{ msg.mensagem }}</p>
+          <div class="chat-deleted-note">Apagada por {{ msg.apagada_por_nome or 'N/A' }} em {{ msg.apagada_em or 'N/A' }}.</div>
+          {% endif %}
+        {% else %}
+        <p>{{ msg.mensagem }}</p>
+        {% endif %}
+      </article>
+      {% else %}
+      <div class="chat-empty" id="chatEmpty">
+        <i class="fa-regular fa-comments"></i>
+        <strong>Nenhuma mensagem ainda</strong>
+        <span>Comece a conversa pelo campo abaixo.</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <form class="chat-compose" id="chatForm" autocomplete="off">
+      <textarea name="mensagem" id="chatInput" rows="1" placeholder="Escreva uma mensagem..." required></textarea>
+      <button class="btn-primary chat-send-btn" type="submit" title="Enviar">
+        <i class="fa-solid fa-paper-plane"></i>
+        <span>Enviar</span>
+      </button>
+    </form>
+  </section>
+</div>
+
+<script>
+const chatState = {
+  usuarioId: Number(document.querySelector(".chat-room").dataset.userId),
+  usuarioRole: document.querySelector(".chat-room").dataset.userRole,
+  mensagens: [],
+  ultimoHtml: "",
+  polling: null
+};
+
+const messagesEl = document.getElementById("chatMessages");
+const formEl = document.getElementById("chatForm");
+const inputEl = document.getElementById("chatInput");
+
+function escapeHtml(value){
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function nearBottom(){
+  return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 120;
+}
+
+function scrollBottom(force=false){
+  if(force || nearBottom()){
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+}
+
+function canDelete(msg){
+  return !msg.apagada && (msg.usuario_id === chatState.usuarioId || ["admin","superadmin"].includes(chatState.usuarioRole));
+}
+
+function renderMessages(mensagens){
+  if(!mensagens.length){
+    messagesEl.innerHTML = `
+      <div class="chat-empty" id="chatEmpty">
+        <i class="fa-regular fa-comments"></i>
+        <strong>Nenhuma mensagem ainda</strong>
+        <span>Comece a conversa pelo campo abaixo.</span>
+      </div>`;
+    chatState.ultimoHtml = messagesEl.innerHTML;
+    return;
+  }
+
+  const shouldStick = nearBottom();
+  const html = mensagens.map(msg => {
+    const mine = msg.usuario_id === chatState.usuarioId;
+    const classes = ["chat-message", mine ? "minha" : "", msg.apagada ? "apagada" : ""].filter(Boolean).join(" ");
+    const deleted = msg.apagada
+      ? `<div class="chat-deleted-note">Apagada por ${escapeHtml(msg.apagada_por_nome || "N/A")} em ${escapeHtml(msg.apagada_em || "N/A")}.</div>`
+      : "";
+    const deleteBtn = canDelete(msg)
+      ? `<button class="chat-delete-btn" type="button" data-id="${msg.id}" title="Apagar"><i class="fa-solid fa-trash"></i></button>`
+      : "";
+    return `
+      <article class="${classes}">
+        <div class="chat-message-head">
+          <strong>${escapeHtml(msg.usuario_nome)}</strong>
+          <span>${escapeHtml(msg.criado_em || "")}</span>
+        </div>
+        <p>${escapeHtml(msg.mensagem)}</p>
+        ${deleted}
+        ${deleteBtn}
+      </article>`;
+  }).join("");
+
+  if(html !== chatState.ultimoHtml){
+    messagesEl.innerHTML = html;
+    chatState.ultimoHtml = html;
+    scrollBottom(shouldStick);
+  }
+}
+
+async function loadMessages(forceScroll=false){
+  const response = await fetch("{{ url_for('api_chat_mensagens') }}", {headers: {"Accept": "application/json"}});
+  if(!response.ok) return;
+  const data = await response.json();
+  chatState.usuarioId = data.usuario.id;
+  chatState.usuarioRole = data.usuario.role;
+  chatState.mensagens = data.mensagens || [];
+  renderMessages(chatState.mensagens);
+  if(forceScroll) scrollBottom(true);
+}
+
+async function sendMessage(text){
+  const response = await fetch("{{ url_for('api_chat_enviar') }}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Accept": "application/json"},
+    body: JSON.stringify({mensagem: text})
+  });
+  if(!response.ok) return false;
+  await loadMessages(true);
+  return true;
+}
+
+async function deleteMessage(id){
+  const response = await fetch(`/api/chat/${id}/apagar`, {
+    method: "POST",
+    headers: {"Accept": "application/json"}
+  });
+  if(response.ok) await loadMessages();
+}
+
+messagesEl.addEventListener("click", ev => {
+  const btn = ev.target.closest(".chat-delete-btn");
+  if(!btn) return;
+  if(confirm("Apagar esta mensagem?")) deleteMessage(btn.dataset.id);
+});
+
+formEl.addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const text = inputEl.value.trim();
+  if(!text) return;
+  inputEl.disabled = true;
+  const ok = await sendMessage(text);
+  if(ok){
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+  }
+  inputEl.disabled = false;
+  inputEl.focus();
+});
+
+inputEl.addEventListener("input", () => {
+  inputEl.style.height = "auto";
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + "px";
+});
+
+inputEl.addEventListener("keydown", ev => {
+  if(ev.key === "Enter" && !ev.shiftKey){
+    ev.preventDefault();
+    formEl.requestSubmit();
+  }
+});
+
+loadMessages(true);
+chatState.polling = setInterval(() => loadMessages(false), 3000);
+</script>
+{% endblock %}

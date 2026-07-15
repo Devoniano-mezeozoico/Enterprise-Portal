@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Comunicados | {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-title comunicados-title">
+  <div>
+    <h1>Comunicados</h1>
+    <p>Avisos, novidades e atualizações importantes da {{ company_name }}.</p>
+  </div>
+  {% if pode_gerenciar %}
+  <span class="gestao-badge"><i class="fa-solid fa-shield-halved"></i> Painel da gestão</span>
+  {% endif %}
+</div>
+
+{% if pode_gerenciar %}
+<section class="comunicados-admin-grid">
+  <div class="card">
+    <h3><i class="fa-solid fa-bullhorn"></i> Novo comunicado</h3>
+    <p class="muted-text admin-card-intro">Publique no mural e, se desejar, abra o aviso como pop-up para todos os colaboradores.</p>
+    <form method="POST">
+      <input type="hidden" name="acao" value="criar">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Título *</label>
+          <input name="titulo" maxlength="140" required placeholder="Ex.: Manutenção programada">
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select name="tipo">
+            <option value="informacao">Informação</option>
+            <option value="atencao">Atenção</option>
+            <option value="urgente">Urgente</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Mensagem *</label>
+        <textarea name="mensagem" rows="4" maxlength="2000" required placeholder="Escreva o que os colaboradores precisam saber."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Link opcional</label>
+          <input name="link_url" placeholder="/noticias ou https://...">
+        </div>
+        <div class="form-group">
+          <label>Começa em</label>
+          <input type="datetime-local" name="inicio_em">
+        </div>
+        <div class="form-group">
+          <label>Termina em</label>
+          <input type="datetime-local" name="fim_em">
+        </div>
+      </div>
+      <label class="popup-check">
+        <input type="checkbox" name="exibir_popup" value="1" checked>
+        <span>
+          <strong>Mostrar como pop-up</strong>
+          <small>Cada colaborador verá uma vez e poderá clicar em “Entendi”.</small>
+        </span>
+      </label>
+      <button class="btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Publicar comunicado</button>
+    </form>
+  </div>
+
+  <div class="card tabs-control-card">
+    <h3><i class="fa-solid fa-sliders"></i> Abas para usuários comuns</h3>
+    <p class="muted-text admin-card-intro">Desmarque uma área para ocultá-la e bloquear seu acesso para o perfil comum. Gestão e demais perfis administrativos continuam com acesso.</p>
+    <form method="POST">
+      <input type="hidden" name="acao" value="salvar_abas">
+      <div class="tabs-control-list">
+        {% for aba in abas_configuraveis %}
+        <label>
+          <span><i class="{{ aba.icone }}"></i> {{ aba.nome }}</span>
+          <input type="checkbox" name="abas_habilitadas" value="{{ aba.chave }}" {% if aba.habilitada_comum %}checked{% endif %}>
+        </label>
+        {% endfor %}
+      </div>
+      <button class="btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar acessos</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+<section class="comunicados-feed">
+  <div class="section-head">
+    <h2><i class="fa-solid fa-wave-square"></i> Mural de atualizações</h2>
+    <span>{{ comunicados|length }} comunicado{{ '' if comunicados|length == 1 else 's' }}</span>
+  </div>
+  {% for comunicado in comunicados %}
+  <article class="card comunicado-card tipo-{{ comunicado.tipo }} {% if not comunicado.ativo %}inativo{% endif %}" id="{{ comunicado.id }}">
+    <div class="comunicado-marker">
+      <i class="fa-solid {{ 'fa-triangle-exclamation' if comunicado.tipo == 'urgente' else ('fa-circle-exclamation' if comunicado.tipo == 'atencao' else 'fa-bullhorn') }}"></i>
+    </div>
+    <div class="comunicado-copy">
+      <div class="comunicado-meta">
+        <span>{{ comunicado.tipo | capitalize }}</span>
+        <time>{{ comunicado.criado_em[:16] }}</time>
+        {% if not comunicado.ativo %}<b>Inativo</b>{% endif %}
+        {% if comunicado.exibir_popup %}<b><i class="fa-regular fa-window-restore"></i> Pop-up</b>{% endif %}
+        {% if comunicado.inicio_em and comunicado.inicio_em > agora_local %}<b>Agendado</b>{% endif %}
+        {% if comunicado.fim_em and comunicado.fim_em < agora_local %}<b>Encerrado</b>{% endif %}
+      </div>
+      <h2>{{ comunicado.titulo }}</h2>
+      <p>{{ comunicado.mensagem }}</p>
+      <div class="comunicado-footer">
+        <small>
+          Publicado por {{ comunicado.criado_por_nome or 'Gestão' }}
+          {% if comunicado.inicio_em or comunicado.fim_em %}
+          · Vigência:
+          {{ comunicado.inicio_em[:16] if comunicado.inicio_em else 'agora' }}
+          até
+          {{ comunicado.fim_em[:16] if comunicado.fim_em else 'sem fim' }}
+          {% endif %}
+        </small>
+        {% if comunicado.link_url %}
+        <a href="{{ comunicado.link_url }}">Abrir link <i class="fa-solid fa-arrow-right"></i></a>
+        {% endif %}
+      </div>
+    </div>
+    {% if pode_gerenciar %}
+    <div class="comunicado-actions">
+      <form method="POST" class="comunicado-status-form">
+        <input type="hidden" name="acao" value="alternar">
+        <input type="hidden" name="comunicado_id" value="{{ comunicado.id }}">
+        <button class="btn-ghost btn-sm" type="submit">{{ 'Desativar' if comunicado.ativo else 'Reativar' }}</button>
+      </form>
+      <form method="POST" class="comunicado-status-form" onsubmit="return confirm('Excluir este comunicado/pop-up antigo?');">
+        <input type="hidden" name="acao" value="excluir">
+        <input type="hidden" name="comunicado_id" value="{{ comunicado.id }}">
+        <button class="btn-danger btn-sm" type="submit">Excluir</button>
+      </form>
+    </div>
+    {% endif %}
+  </article>
+  {% else %}
+  <div class="card comunicados-empty">
+    <i class="fa-regular fa-bell-slash"></i>
+    <h3>Nenhum comunicado publicado</h3>
+    <p>Quando houver uma novidade importante, ela aparecerá aqui.</p>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

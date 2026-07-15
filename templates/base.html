@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div>
+      <a href="{{ url_for('home') }}" class="logo-area logo-link">
+        <div class="logo-circle">{{ company_initial }}</div>
+        <div class="logo-text">
+          <h2>{{ app_name }}</h2>
+          <span>{{ portal_subtitle }}</span>
+        </div>
+      </a>
+      <nav class="menu">
+        {% set setor_usuario_menu = ((usuario_logado.setor or '')|lower) if usuario_logado else '' %}
+        <a href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>Início</span></a>
+        <a href="{{ url_for('comunicados') }}">
+          <i class="fa-solid fa-bullhorn"></i><span>Comunicados</span>
+          <b class="menu-notice-badge" id="menuNoticeBadge" {% if not notificacoes_nao_lidas %}hidden{% endif %}>{{ notificacoes_nao_lidas if notificacoes_nao_lidas < 100 else '99+' }}</b>
+        </a>
+        {% if 'noticias' in abas_visiveis %}
+        <a href="{{ url_for('noticias') }}" data-portal-tab="noticias"><i class="fa-solid fa-newspaper"></i><span>Notícias</span></a>
+        {% endif %}
+        {% if 'apps' in abas_visiveis %}
+        <a href="{{ url_for('hub_apps') }}" data-portal-tab="apps"><i class="fa-solid fa-mobile-screen"></i><span>Hub de Apps</span></a>
+        {% endif %}
+        {% if 'agenda' in abas_visiveis %}
+        <a href="{{ url_for('agenda') }}" data-portal-tab="agenda"><i class="fa-solid fa-calendar-days"></i><span>Agenda/Reservas</span></a>
+        {% endif %}
+        {% if 'chat' in abas_visiveis %}
+        <a href="{{ url_for('chat') }}" data-portal-tab="chat"><i class="fa-solid fa-comments"></i><span>Chat</span></a>
+        {% endif %}
+        {% if 'pops' in abas_visiveis %}
+        <a href="{{ url_for('pops') }}" data-portal-tab="pops"><i class="fa-solid fa-book"></i><span>POPs</span></a>
+        {% endif %}
+        {% if 'chamados_ti' in abas_visiveis %}
+        <a href="{{ url_for('chamados_ti') }}" data-portal-tab="chamados_ti"><i class="fa-solid fa-headset"></i><span>Chamados TI</span></a>
+        {% endif %}
+        {% if 'ia' in abas_visiveis %}
+        <a href="{{ url_for('ia') }}" data-portal-tab="ia"><i class="fa-solid fa-robot"></i><span>{{ ai_assistant_name }}</span></a>
+        {% endif %}
+        {% if usuario_logado and usuario_logado.role in ['admin','superadmin'] %}
+        <div class="menu-sep"></div>
+        <a href="{{ url_for('estoque_ti') }}"><i class="fa-solid fa-boxes-stacked"></i><span>Estoque TI</span></a>
+        <a href="{{ url_for('admin_atendimentos') }}"><i class="fa-solid fa-chart-simple"></i><span>Atendimentos</span></a>
+        <a href="{{ url_for('admin_honeypot') }}"><i class="fa-solid fa-fingerprint"></i><span>Honeypot</span></a>
+        <a href="{{ url_for('admin_apps') }}"><i class="fa-solid fa-grid-2"></i><span>Gerenciar Apps</span></a>
+        <a href="{{ url_for('admin_acessos') }}"><i class="fa-solid fa-chart-line"></i><span>Acessos</span></a>
+        <a href="{{ url_for('admin_auditoria') }}"><i class="fa-solid fa-shield-halved"></i><span>Auditoria</span></a>
+        {% endif %}
+        {% if usuario_logado and usuario_logado.role not in ['admin','superadmin'] and 'ger' in setor_usuario_menu %}
+        <div class="menu-sep"></div>
+        <a href="{{ url_for('admin_atendimentos') }}"><i class="fa-solid fa-chart-simple"></i><span>Atendimentos</span></a>
+        {% endif %}
+        {% if usuario_logado and usuario_logado.role == 'superadmin' %}
+        <a href="{{ url_for('admin_usuarios') }}"><i class="fa-solid fa-users-gear"></i><span>Usuários</span></a>
+        <a href="{{ url_for('admin_unidades') }}"><i class="fa-solid fa-building"></i><span>Unidades</span></a>
+        {% endif %}
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <div class="server-status"><span class="status-dot"></span> Sistema Online</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span style="font-size:13px;color:var(--text-muted);display:none;" class="breadcrumb">{% block breadcrumb %}{% endblock %}</span>
+      </div>
+      <div class="search-center">
+        <div class="search-box" id="globalSearchBox">
+          <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted);"></i>
+          <input type="text" id="globalSearch" placeholder="Pesquisar POPs, notícias, apps…" autocomplete="off">
+          <span class="search-spinner" id="globalSearchSpinner" hidden><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+          <div class="global-search-results" id="globalSearchResults" hidden></div>
+        </div>
+      </div>
+      <div class="user-area">
+        <div class="notification-wrap">
+          <button class="notification" id="notificationButton" type="button" aria-label="Abrir notificações" aria-expanded="false">
+            <i class="fa-regular fa-bell"></i>
+            <span class="notification-badge" id="notificationBadge" {% if not notificacoes_nao_lidas %}hidden{% endif %}>{{ notificacoes_nao_lidas if notificacoes_nao_lidas < 100 else '99+' }}</span>
+          </button>
+          <div class="notification-panel" id="notificationPanel" hidden>
+            <div class="notification-panel-head">
+              <strong>Notificações</strong>
+              <form method="POST" action="{{ url_for('notificacoes_marcar_todas') }}" id="markAllNotificationsForm" {% if not notificacoes_nao_lidas %}hidden{% endif %}>
+                <button type="submit" id="markAllNotificationsButton">Marcar todas como lidas</button>
+              </form>
+            </div>
+            <button class="desktop-notification-toggle" id="desktopNotificationButton" type="button" hidden>
+              <i class="fa-regular fa-bell"></i> Ativar alertas no computador
+            </button>
+            <div class="notification-list" id="notificationList">
+              {% for notificacao in notificacoes_recentes %}
+              <a class="notification-item {% if not notificacao.lida_em %}nao-lida{% endif %}" href="{{ url_for('notificacao_abrir', notificacao_id=notificacao.id) }}" data-notification-id="{{ notificacao.id }}">
+                <i class="fa-solid {{ 'fa-newspaper' if notificacao.tipo == 'noticia' else ('fa-book' if notificacao.tipo == 'pop' else ('fa-calendar-check' if notificacao.tipo == 'evento' else 'fa-bullhorn')) }}"></i>
+                <span>
+                  <strong>{{ notificacao.titulo }}</strong>
+                  {% if notificacao.mensagem %}<small>{{ notificacao.mensagem }}</small>{% endif %}
+                  <time>{{ notificacao.criado_em[:16] }}</time>
+                </span>
+              </a>
+              {% else %}
+              <p class="notification-empty">Nenhuma notificação por aqui.</p>
+              {% endfor %}
+            </div>
+            <a class="notification-footer-link" href="{{ url_for('comunicados') }}">Ver comunicados</a>
+          </div>
+        </div>
+        <div class="user-info">
+          <div class="avatar">{{ (usuario_logado.nome[:2] if usuario_logado else '??') | upper }}</div>
+          <div style="line-height:1.3;">
+            <div style="font-size:14px;font-weight:600;">{{ usuario_logado.nome if usuario_logado else 'Visitante' }}</div>
+            <div style="font-size:11px;color:var(--text-muted);">{{ usuario_logado.role | capitalize if usuario_logado else '' }}</div>
+            {% if unidade_usuario %}<div class="user-unit">{{ unidade_usuario.codigo }}</div>{% endif %}
+          </div>
+        </div>
+        {% if usuario_logado %}
+        <form method="POST" action="{{ url_for('logout') }}">
+          <button class="btn-ghost btn-sm" type="submit"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </header>
+
+    <section class="page-content">
+      {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% if msgs %}
+          <div class="flash-messages">
+            {% for cat, msg in msgs %}
+              <div class="mensagem {{ 'erro' if cat == 'erro' else 'sucesso' }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </section>
+  </main>
+</div>
+
+<div id="portalPopupSlot">
+{% if popup_pendente %}
+<div class="portal-popup-overlay aberto" id="portalPopup" role="dialog" aria-modal="true" aria-labelledby="portalPopupTitle" data-popup-id="{{ popup_pendente.id }}" data-close-url="{{ url_for('comunicado_fechar_popup', comunicado_id=popup_pendente.id) }}">
+  <article class="portal-popup tipo-{{ popup_pendente.tipo }}">
+    <div class="portal-popup-icon">
+      <i class="fa-solid {{ 'fa-triangle-exclamation' if popup_pendente.tipo == 'urgente' else ('fa-circle-exclamation' if popup_pendente.tipo == 'atencao' else 'fa-bullhorn') }}"></i>
+    </div>
+    <div class="portal-popup-body">
+      <span class="portal-popup-label">{{ popup_pendente.tipo | capitalize }}</span>
+      <h2 id="portalPopupTitle">{{ popup_pendente.titulo }}</h2>
+      <p>{{ popup_pendente.mensagem }}</p>
+      <div class="portal-popup-actions">
+        {% if popup_pendente.link_url %}
+        <a class="btn-primary" href="{{ popup_pendente.link_url }}">Saiba mais</a>
+        {% endif %}
+        <button class="btn-ghost" id="portalPopupClose" type="button">Entendi</button>
+      </div>
+    </div>
+  </article>
+</div>
+{% endif %}
+</div>
+
+<script>
+(() => {
+  const portalLoggedIn = {{ 'true' if usuario_logado else 'false' }};
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const portalUrls = {
+    search: "{{ url_for('api_pesquisa') }}",
+    realtime: "{{ url_for('api_portal_tempo_real') }}",
+    home: "{{ url_for('home') }}",
+    favicon: "{{ url_for('static', filename='img/favicon.ico') }}",
+    serviceWorker: "{{ url_for('portal_notifications_sw') }}",
+    appName: {{ app_name|tojson }}
+  };
+
+  const searchInput = document.getElementById('globalSearch');
+  const searchBox = document.getElementById('globalSearchBox');
+  const searchResults = document.getElementById('globalSearchResults');
+  const searchSpinner = document.getElementById('globalSearchSpinner');
+  let searchTimer;
+  let searchController;
+
+  function ensureCsrfForForm(form) {
+    if (!csrfToken || !form) return;
+    const method = (form.getAttribute('method') || 'GET').toUpperCase();
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return;
+    if (form.querySelector('input[name="_csrf_token"]')) return;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = '_csrf_token';
+    input.value = csrfToken;
+    form.prepend(input);
+  }
+
+  function installCsrfForForms() {
+    if (!csrfToken) return;
+    document.querySelectorAll('form[method]').forEach(ensureCsrfForForm);
+  }
+
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (resource, options = {}) => {
+    const method = String(options.method || 'GET').toUpperCase();
+    if (csrfToken && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const headers = new Headers(options.headers || {});
+      if (!headers.has('X-CSRFToken')) headers.set('X-CSRFToken', csrfToken);
+      options = {...options, headers};
+    }
+    return nativeFetch(resource, options);
+  };
+
+  installCsrfForForms();
+  document.addEventListener('DOMContentLoaded', installCsrfForForms);
+  document.addEventListener('submit', event => ensureCsrfForForm(event.target), true);
+
+  function closeSearch() {
+    if (!searchResults) return;
+    searchResults.hidden = true;
+    searchResults.innerHTML = '';
+  }
+
+  function renderSearch(items, query) {
+    if (!searchResults) return;
+    searchResults.innerHTML = '';
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'global-search-empty';
+      empty.textContent = `Nenhum resultado para “${query}”.`;
+      searchResults.appendChild(empty);
+    } else {
+      items.forEach(item => {
+        const link = document.createElement('a');
+        link.className = 'global-search-item';
+        link.href = item.url;
+        const icon = document.createElement('i');
+        icon.className = item.icone || 'fa-solid fa-magnifying-glass';
+        const copy = document.createElement('span');
+        const title = document.createElement('strong');
+        title.textContent = item.titulo;
+        const meta = document.createElement('small');
+        meta.textContent = item.descricao ? `${item.tipo} · ${item.descricao}` : item.tipo;
+        copy.append(title, meta);
+        link.append(icon, copy);
+        searchResults.appendChild(link);
+      });
+    }
+    searchResults.hidden = false;
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const query = searchInput.value.trim();
+      if (query.length < 2) {
+        closeSearch();
+        if (searchSpinner) searchSpinner.hidden = true;
+        return;
+      }
+      searchTimer = setTimeout(async () => {
+        if (searchController) searchController.abort();
+        searchController = new AbortController();
+        if (searchSpinner) searchSpinner.hidden = false;
+        try {
+          const response = await fetch(`${portalUrls.search}?q=${encodeURIComponent(query)}`, {
+            signal: searchController.signal,
+            headers: {'Accept': 'application/json'},
+            credentials: 'same-origin'
+          });
+          if (!response.ok) throw new Error('Falha na pesquisa');
+          const data = await response.json();
+          if (searchInput.value.trim() === query) renderSearch(data.resultados || [], query);
+        } catch (error) {
+          if (error.name !== 'AbortError') renderSearch([], query);
+        } finally {
+          if (searchSpinner) searchSpinner.hidden = true;
+        }
+      }, 220);
+    });
+  }
+
+  document.addEventListener('click', event => {
+    if (searchBox && !searchBox.contains(event.target)) closeSearch();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeSearch();
+  });
+
+  const notificationButton = document.getElementById('notificationButton');
+  const notificationPanel = document.getElementById('notificationPanel');
+  const notificationBadge = document.getElementById('notificationBadge');
+  const menuNoticeBadge = document.getElementById('menuNoticeBadge');
+  const notificationList = document.getElementById('notificationList');
+  const markAllForm = document.getElementById('markAllNotificationsForm');
+  const desktopButton = document.getElementById('desktopNotificationButton');
+
+  function setCookie(name, value) {
+    document.cookie = `${name}=${encodeURIComponent(value)}; max-age=15552000; path=/; SameSite=Lax`;
+  }
+
+  function getCookie(name) {
+    const prefix = `${name}=`;
+    const item = document.cookie.split('; ').find(part => part.startsWith(prefix));
+    return item ? decodeURIComponent(item.slice(prefix.length)) : '';
+  }
+
+  function remember(name, value) {
+    try {
+      localStorage.setItem(name, value);
+    } catch (_) {
+      setCookie(name, value);
+    }
+  }
+
+  function recall(name) {
+    try {
+      return localStorage.getItem(name) || getCookie(name);
+    } catch (_) {
+      return getCookie(name);
+    }
+  }
+
+  function showToast(title, message, action) {
+    let stack = document.getElementById('portalLiveToastStack');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = 'portalLiveToastStack';
+      stack.className = 'portal-live-toast-stack';
+      document.body.appendChild(stack);
+    }
+    const toast = document.createElement('div');
+    toast.className = 'portal-live-toast';
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-bolt';
+    const copy = document.createElement('span');
+    const strong = document.createElement('strong');
+    strong.textContent = title;
+    const small = document.createElement('small');
+    small.textContent = message;
+    copy.append(strong, small);
+    toast.append(icon, copy);
+    if (action) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = action.label;
+      button.addEventListener('click', action.onClick);
+      toast.appendChild(button);
+    }
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'portal-live-toast-close';
+    close.setAttribute('aria-label', 'Fechar aviso');
+    close.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    close.addEventListener('click', () => toast.remove());
+    toast.appendChild(close);
+    stack.appendChild(toast);
+    setTimeout(() => toast.remove(), action ? 12000 : 7000);
+  }
+
+  if (notificationButton && notificationPanel) {
+    notificationButton.addEventListener('click', event => {
+      event.stopPropagation();
+      closeSearch();
+      notificationPanel.hidden = !notificationPanel.hidden;
+      notificationButton.setAttribute('aria-expanded', String(!notificationPanel.hidden));
+    });
+    document.addEventListener('click', event => {
+      if (!notificationPanel.contains(event.target) && !notificationButton.contains(event.target)) {
+        notificationPanel.hidden = true;
+        notificationButton.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  function secureEnoughForDesktopNotifications() {
+    return window.isSecureContext || ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+  }
+
+  function updateDesktopButton() {
+    if (!desktopButton) return;
+    if (!('Notification' in window)) {
+      desktopButton.hidden = true;
+      return;
+    }
+    desktopButton.disabled = false;
+    desktopButton.innerHTML = '<i class="fa-regular fa-bell"></i> Ativar alertas no computador';
+    if (!secureEnoughForDesktopNotifications()) {
+      desktopButton.hidden = false;
+      desktopButton.disabled = true;
+      desktopButton.innerHTML = '<i class="fa-solid fa-lock"></i> Alertas desktop exigem HTTPS';
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      desktopButton.hidden = false;
+      desktopButton.disabled = true;
+      desktopButton.innerHTML = '<i class="fa-solid fa-ban"></i> Alertas bloqueados no navegador';
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      remember('portalDesktopEnabled', '1');
+      desktopButton.hidden = true;
+      return;
+    }
+    desktopButton.hidden = false;
+  }
+
+  if (desktopButton) {
+    desktopButton.addEventListener('click', async () => {
+      if (!('Notification' in window)) return;
+      if (!secureEnoughForDesktopNotifications()) {
+        showToast('Navegador bloqueou', 'Para alertas na área de trabalho, abra o portal em HTTPS ou localhost.');
+        updateDesktopButton();
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        remember('portalDesktopEnabled', '1');
+        await getDesktopNotificationRegistration();
+        showToast('Alertas ativados', 'Quando chegar notícia, POP ou comunicado, o Windows também avisará na área de trabalho.');
+      } else {
+        showToast('Permissão não ativada', 'O sino do portal continuará avisando dentro do site.');
+      }
+      updateDesktopButton();
+    });
+    updateDesktopButton();
+  }
+
+  const liveState = {
+    firstSync: true,
+    pageVersion: null,
+    pollMs: 12000,
+    reloadQueued: false,
+    lastEditToastAt: 0,
+    shownNotifications: new Set()
+  };
+
+  try {
+    const saved = JSON.parse(recall('portalShownNotifications') || '[]');
+    saved.forEach(id => liveState.shownNotifications.add(Number(id)));
+  } catch (_) {}
+
+  function saveShownNotifications() {
+    const ids = Array.from(liveState.shownNotifications)
+      .filter(Boolean)
+      .sort((a, b) => b - a)
+      .slice(0, 120);
+    liveState.shownNotifications = new Set(ids);
+    remember('portalShownNotifications', JSON.stringify(ids));
+  }
+
+  function desktopNotificationsEnabled() {
+    return 'Notification' in window
+      && secureEnoughForDesktopNotifications()
+      && Notification.permission === 'granted'
+      && recall('portalDesktopEnabled') === '1';
+  }
+
+  let desktopRegistrationPromise = null;
+  function getDesktopNotificationRegistration() {
+    if (!('serviceWorker' in navigator) || !secureEnoughForDesktopNotifications()) {
+      return Promise.resolve(null);
+    }
+    if (!desktopRegistrationPromise) {
+      desktopRegistrationPromise = navigator.serviceWorker
+        .register(portalUrls.serviceWorker, {scope: '/'})
+        .then(registration => navigator.serviceWorker.ready.then(() => registration))
+        .catch(() => null);
+    }
+    return desktopRegistrationPromise;
+  }
+
+  async function showDesktopNotification(notificacao) {
+    if (!desktopNotificationsEnabled()) return;
+    try {
+      const registration = await getDesktopNotificationRegistration();
+      if (registration && registration.showNotification) {
+        await registration.showNotification(notificacao.titulo || 'Atualização no portal', {
+          body: notificacao.mensagem || `Há uma novidade em ${portalUrls.appName}.`,
+          icon: portalUrls.favicon,
+          badge: portalUrls.favicon,
+          tag: `portal-${notificacao.id}`,
+          renotify: true,
+          data: {url: notificacao.url || '/comunicados'}
+        });
+        return;
+      }
+      const desktop = new Notification(notificacao.titulo || 'Atualização no portal', {
+        body: notificacao.mensagem || `Há uma novidade em ${portalUrls.appName}.`,
+        icon: portalUrls.favicon,
+        tag: `portal-${notificacao.id}`,
+        data: {url: notificacao.url || '/comunicados'}
+      });
+      desktop.onclick = () => {
+        window.focus();
+        window.location.href = notificacao.url;
+        desktop.close();
+      };
+    } catch (_) {}
+  }
+
+  function updateBadges(total, label) {
+    const hasUnread = Number(total || 0) > 0;
+    [notificationBadge, menuNoticeBadge].forEach(badge => {
+      if (!badge) return;
+      badge.hidden = !hasUnread;
+      badge.textContent = label || (total > 99 ? '99+' : String(total || 0));
+    });
+    if (markAllForm) markAllForm.hidden = !hasUnread;
+  }
+
+  function renderNotificationList(items) {
+    if (!notificationList) return;
+    notificationList.innerHTML = '';
+    if (!items.length) {
+      const empty = document.createElement('p');
+      empty.className = 'notification-empty';
+      empty.textContent = 'Nenhuma notificação por aqui.';
+      notificationList.appendChild(empty);
+      return;
+    }
+    items.forEach(item => {
+      const link = document.createElement('a');
+      link.className = `notification-item ${item.lida ? '' : 'nao-lida'}`.trim();
+      link.href = item.url;
+      link.dataset.notificationId = item.id;
+      const icon = document.createElement('i');
+      icon.className = item.icone || 'fa-solid fa-bullhorn';
+      const copy = document.createElement('span');
+      const title = document.createElement('strong');
+      title.textContent = item.titulo;
+      copy.appendChild(title);
+      if (item.mensagem) {
+        const message = document.createElement('small');
+        message.textContent = item.mensagem;
+        copy.appendChild(message);
+      }
+      const time = document.createElement('time');
+      time.textContent = (item.criado_em || '').slice(0, 16);
+      copy.appendChild(time);
+      link.append(icon, copy);
+      notificationList.appendChild(link);
+    });
+  }
+
+  function processNewNotifications(items) {
+    const fresh = items.filter(item => item && item.id && !item.lida && !liveState.shownNotifications.has(Number(item.id)));
+    if (liveState.firstSync) {
+      items.forEach(item => liveState.shownNotifications.add(Number(item.id)));
+      saveShownNotifications();
+      return;
+    }
+    if (!fresh.length) return;
+    const ordered = fresh.slice().reverse();
+    const first = ordered[0];
+    const extra = ordered.length > 1 ? ` (+${ordered.length - 1})` : '';
+    showToast('Nova atualização no portal', `${first.titulo}${extra}`);
+    ordered.slice(0, 3).forEach(showDesktopNotification);
+    items.forEach(item => liveState.shownNotifications.add(Number(item.id)));
+    saveShownNotifications();
+  }
+
+  function renderPopup(popup) {
+    const slot = document.getElementById('portalPopupSlot');
+    if (!slot) return;
+    const current = document.getElementById('portalPopup');
+    if (!popup) {
+      if (current) current.remove();
+      return;
+    }
+    if (current && current.dataset.popupId === String(popup.id)) return;
+    slot.innerHTML = '';
+    const overlay = document.createElement('div');
+    overlay.className = 'portal-popup-overlay aberto';
+    overlay.id = 'portalPopup';
+    overlay.role = 'dialog';
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'portalPopupTitle');
+    overlay.dataset.popupId = popup.id;
+    overlay.dataset.closeUrl = popup.fechar_url;
+
+    const card = document.createElement('article');
+    card.className = `portal-popup tipo-${popup.tipo || 'informacao'}`;
+    const iconWrap = document.createElement('div');
+    iconWrap.className = 'portal-popup-icon';
+    const icon = document.createElement('i');
+    icon.className = popup.icone || 'fa-solid fa-bullhorn';
+    iconWrap.appendChild(icon);
+
+    const body = document.createElement('div');
+    body.className = 'portal-popup-body';
+    const label = document.createElement('span');
+    label.className = 'portal-popup-label';
+    label.textContent = popup.tipo || 'Informação';
+    const title = document.createElement('h2');
+    title.id = 'portalPopupTitle';
+    title.textContent = popup.titulo;
+    const message = document.createElement('p');
+    message.textContent = popup.mensagem;
+    const actions = document.createElement('div');
+    actions.className = 'portal-popup-actions';
+    if (popup.link_url) {
+      const link = document.createElement('a');
+      link.className = 'btn-primary';
+      link.href = popup.link_url;
+      link.textContent = 'Saiba mais';
+      actions.appendChild(link);
+    }
+    const close = document.createElement('button');
+    close.className = 'btn-ghost';
+    close.id = 'portalPopupClose';
+    close.type = 'button';
+    close.textContent = 'Entendi';
+    actions.appendChild(close);
+    body.append(label, title, message, actions);
+    card.append(iconWrap, body);
+    overlay.appendChild(card);
+    slot.appendChild(overlay);
+    setTimeout(() => close.focus(), 60);
+  }
+
+  document.addEventListener('click', async event => {
+    const closeButton = event.target.closest('#portalPopupClose');
+    if (!closeButton) return;
+    const popup = closeButton.closest('.portal-popup-overlay');
+    if (!popup) return;
+    popup.classList.remove('aberto');
+    try {
+      const response = await fetch(popup.dataset.closeUrl || `/comunicados/${popup.dataset.popupId}/fechar-popup`, {
+        method: 'POST',
+        headers: {'Accept': 'application/json'},
+        credentials: 'same-origin'
+      });
+      if (!response.ok) throw new Error('Falha ao fechar popup');
+      popup.remove();
+    } catch (_) {
+      popup.classList.add('aberto');
+    }
+  });
+
+  function applyVisibleTabs(abas) {
+    if (!abas) return;
+    const visible = new Set(abas.map(aba => aba.chave));
+    document.querySelectorAll('[data-portal-tab]').forEach(link => {
+      link.hidden = !visible.has(link.dataset.portalTab);
+    });
+  }
+
+  document.addEventListener('input', event => {
+    const form = event.target.closest('form');
+    if (form) form.dataset.portalDirty = '1';
+  }, true);
+  document.addEventListener('submit', event => {
+    event.target.dataset.portalDirty = '0';
+  }, true);
+
+  function userIsEditing() {
+    const active = document.activeElement;
+    const tag = active ? active.tagName : '';
+    const typing = active && (
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)
+      || active.isContentEditable
+    );
+    return typing || Boolean(document.querySelector('form[data-portal-dirty="1"]'));
+  }
+
+  function maybeRefreshPage(data) {
+    if (!data || !data.versao) return;
+    if (liveState.pageVersion === null) {
+      liveState.pageVersion = data.versao;
+      return;
+    }
+    if (data.versao === liveState.pageVersion || liveState.reloadQueued) return;
+    if (['chat', 'ia'].includes(data.area)) {
+      liveState.pageVersion = data.versao;
+      return;
+    }
+    if (userIsEditing()) {
+      const now = Date.now();
+      if (now - liveState.lastEditToastAt > 60000) {
+        liveState.lastEditToastAt = now;
+        showToast('Atualizações disponíveis', 'Assim que você parar de editar, o portal atualiza esta tela.', {
+          label: 'Atualizar agora',
+          onClick: () => window.location.reload()
+        });
+      }
+      return;
+    }
+    liveState.reloadQueued = true;
+    showToast('Atualizando portal', 'Chegaram novidades; atualizando a tela automaticamente.');
+    setTimeout(() => window.location.reload(), 900);
+  }
+
+  async function syncPortal() {
+    if (!portalLoggedIn) return;
+    try {
+      const path = `${location.pathname}${location.search}`;
+      const response = await fetch(`${portalUrls.realtime}?path=${encodeURIComponent(path)}&_=${Date.now()}`, {
+        headers: {'Accept': 'application/json'},
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+      if (response.status === 401) return;
+      if (!response.ok) throw new Error('Falha ao atualizar portal');
+      const data = await response.json();
+      liveState.pollMs = Number(data.poll_ms || 12000);
+      if (data.acesso_atual === false) {
+        showToast('Área bloqueada pela gestão', 'Você será levado para o início.');
+        setTimeout(() => { window.location.href = portalUrls.home; }, 900);
+        return;
+      }
+      updateBadges(Number(data.nao_lidas || 0), data.nao_lidas_label);
+      renderNotificationList(data.notificacoes || []);
+      processNewNotifications(data.notificacoes || []);
+      renderPopup(data.popup);
+      applyVisibleTabs(data.abas || []);
+      maybeRefreshPage(data);
+      liveState.firstSync = false;
+    } catch (_) {
+      liveState.pollMs = Math.min(Math.max(liveState.pollMs, 12000) + 3000, 30000);
+    } finally {
+      setTimeout(syncPortal, liveState.pollMs);
+    }
+  }
+
+  if (portalLoggedIn) {
+    syncPortal();
+  }
+})();
+</script>
+</body>
+</html>

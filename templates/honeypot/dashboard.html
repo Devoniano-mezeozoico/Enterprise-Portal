@@ -1,0 +1,27 @@
+{% extends "honeypot/base.html" %}
+{% block content %}
+<header class="fake-page-head">
+  <h1>Dashboard</h1>
+  <p>Resumo operacional do painel administrativo.</p>
+</header>
+<div class="fake-stats">
+  <div><strong>{{ dados.usuarios }}</strong><span>Usuarios</span></div>
+  <div><strong>{{ dados.tickets }}</strong><span>Tickets</span></div>
+  <div><strong>{{ dados.logs }}</strong><span>Logs</span></div>
+  <div><strong>{{ dados.backups }}</strong><span>Backups</span></div>
+</div>
+<div class="fake-grid">
+  <section class="fake-card">
+    <h3>Tickets recentes</h3>
+    {% for t in dados.tickets_recentes %}
+    <div class="fake-list-row"><strong>{{ t.titulo }}</strong><span>{{ t.prioridade }} · {{ t.status }}</span></div>
+    {% endfor %}
+  </section>
+  <section class="fake-card">
+    <h3>Logs recentes</h3>
+    {% for l in dados.logs_recentes %}
+    <div class="fake-list-row"><strong>{{ l.nivel }} · {{ l.origem }}</strong><span>{{ l.mensagem }}</span></div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

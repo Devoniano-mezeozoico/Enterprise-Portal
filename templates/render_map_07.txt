@@ -1,0 +1,1 @@
+Marcador inerte de renderizacao. Nao contem codigo, credenciais ou dados operacionais.

@@ -1,0 +1,16 @@
+{% extends "honeypot/base.html" %}
+{% block content %}
+<header class="fake-page-head">
+  <h1>Database</h1>
+  <p>Operacoes sensiveis exigem validacao adicional.</p>
+</header>
+<section class="fake-card fake-danger-zone">
+  <h3>Exportar banco</h3>
+  <p>O pacote de exportacao esta protegido por politica interna. Solicite permissao elevada.</p>
+  <form method="POST">
+    <input name="acao" value="export_database" type="hidden">
+    <button type="submit">Solicitar exportacao</button>
+  </form>
+  {% if erro %}<div class="fake-login-error">Permissao insuficiente para concluir a operacao.</div>{% endif %}
+</section>
+{% endblock %}

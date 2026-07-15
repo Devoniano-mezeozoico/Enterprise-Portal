@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}Agenda e Reservas{% endblock %}
+{% block content %}
+<div class="page-title">
+  <h1>Agenda e Reservas</h1>
+  <p>Eventos e reunioes por sala.</p>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button class="btn-ghost btn-sm" id="btnAnterior">&laquo;</button>
+      <h2 id="tituloMes" style="color:var(--sidebar-bg);min-width:200px;text-align:center;font-size:18px;"></h2>
+      <button class="btn-ghost btn-sm" id="btnSeguinte">&raquo;</button>
+    </div>
+    <div id="legendaSalas" class="agenda-legenda"></div>
+  </div>
+  <div class="agenda-grid" id="agendaGrid"></div>
+</div>
+
+{% if usuario_logado and usuario_logado.role in ['recepcao','admin','superadmin'] %}
+<div class="card">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-calendar-plus"></i> Nova reserva / evento</h3>
+  <form method="POST" action="{{ url_for('agenda_criar') }}">
+    <div class="form-row">
+      <div class="form-group"><label>Titulo *</label><input name="titulo" required></div>
+      <div class="form-group">
+        <label>Tipo *</label>
+        <select name="tipo" required>
+          <option value="reserva">Reserva de sala</option>
+          <option value="interno">Evento interno</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sala / local *</label>
+        <select name="sala" required>
+          <option value="">-- selecione --</option>
+          <option value="Evento interno">Evento interno</option>
+          {% for s in salas %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Data *</label><input type="date" name="data" required></div>
+      <div class="form-group"><label>Hora Inicio</label><input type="time" name="hora_inicio"></div>
+      <div class="form-group"><label>Hora Fim</label><input type="time" name="hora_fim"></div>
+    </div>
+    <div class="form-group"><label>Descricao</label><textarea name="descricao" rows="2"></textarea></div>
+    <button class="btn-primary" type="submit"><i class="fa-solid fa-plus"></i> Adicionar</button>
+  </form>
+</div>
+{% endif %}
+
+{% if usuario_logado and usuario_logado.role in ['admin','superadmin'] %}
+<div class="card" style="margin-top:20px;">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-door-open"></i> Salas existentes</h3>
+  <form method="POST" action="{{ url_for('admin_salas_criar') }}" style="margin-bottom:16px;">
+    <div class="form-row">
+      <div class="form-group"><label>Nova sala</label><input name="nome" required placeholder="Ex.: Sala Comercial"></div>
+      <div class="form-group"><label>Capacidade</label><input type="number" name="capacidade" min="0" value="0"></div>
+      <div class="form-group"><label>Descricao</label><input name="descricao" placeholder="Opcional"></div>
+      <div class="form-group">
+        <label>Unidade</label>
+        <select name="unidade_id">
+          <option value="">Não definida</option>
+          {% for unidade in unidades %}<option value="{{ unidade.id }}">{{ unidade.nome }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary btn-sm" type="submit"><i class="fa-solid fa-plus"></i> Adicionar sala</button>
+  </form>
+  <div style="overflow-x:auto;">
+    <table class="tabela-acessos">
+      <thead><tr><th>Sala</th><th>Unidade</th><th>Capacidade</th><th>Descricao</th><th>Acoes</th></tr></thead>
+      <tbody>
+        {% for sala in salas_admin %}
+        {% set form_id = 'formSala' ~ sala.id %}
+        <tr>
+          <td><input class="table-input" name="nome" form="{{ form_id }}" value="{{ sala.nome }}" required></td>
+          <td>
+            {% set unidade_sala = unidades_salas.get(sala.id|string) %}
+            <select class="table-input" name="unidade_id" form="{{ form_id }}">
+              <option value="">Não definida</option>
+              {% for unidade in unidades %}
+              <option value="{{ unidade.id }}" {{ 'selected' if unidade_sala and unidade_sala.unidade_id == unidade.id }}>{{ unidade.nome }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td><input class="table-input table-input-small" type="number" name="capacidade" form="{{ form_id }}" min="0" value="{{ sala.capacidade or 0 }}"></td>
+          <td><input class="table-input" name="descricao" form="{{ form_id }}" value="{{ sala.descricao or '' }}"></td>
+          <td>
+            <div class="table-actions">
+              <form id="{{ form_id }}" method="POST" action="{{ url_for('admin_salas_atualizar', sala_id=sala.id) }}">
+                <button class="btn-primary btn-sm" type="submit"><i class="fa-solid fa-floppy-disk"></i></button>
+              </form>
+              <form method="POST" action="{{ url_for('admin_salas_excluir', sala_id=sala.id) }}" onsubmit="return confirm('Excluir esta sala?');">
+                <button class="btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="color:var(--text-muted);">Nenhuma sala cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:20px;">
+  <h3 style="margin-bottom:16px;"><i class="fa-solid fa-door-open"></i> Proximas reservas e eventos</h3>
+  <div class="salas-reservas-grid">
+    {% for sala, eventos in eventos_por_sala.items() %}
+    <section class="sala-reserva-col">
+      <h4>{{ sala }}</h4>
+      {% for e in eventos[:6] %}
+      <div class="sala-reserva-item">
+        <strong>{{ e.titulo }}</strong>
+        <span>{{ e.data_evento }}{% if e.hora_inicio %} - {{ e.hora_inicio }}{% endif %}{% if e.hora_fim %} ate {{ e.hora_fim }}{% endif %}</span>
+      </div>
+      {% endfor %}
+    </section>
+    {% else %}
+    <p class="muted-text">Nenhuma reserva futura cadastrada ainda.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalEditar">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-pen"></i> Editar Evento</h3>
+    <form method="POST" id="formEditar">
+      <div class="form-group"><label>Titulo</label><input name="titulo" id="editTitulo" required></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo</label>
+          <select name="tipo" id="editTipo">
+            <option value="reserva">Reserva de sala</option>
+            <option value="interno">Evento interno</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sala / local</label>
+          <select name="sala" id="editSala">
+            <option value="Evento interno">Evento interno</option>
+            {% for s in salas %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group"><label>Data</label><input type="date" name="data" id="editData"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Hora Inicio</label><input type="time" name="hora_inicio" id="editHI"></div>
+        <div class="form-group"><label>Hora Fim</label><input type="time" name="hora_fim" id="editHF"></div>
+      </div>
+      <div class="form-group"><label>Descricao</label><textarea name="descricao" id="editDesc" rows="2"></textarea></div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn-primary">Salvar</button>
+      </div>
+    </form>
+    <form method="POST" id="formExcluir" style="display:inline;">
+      <div style="margin-top:10px;text-align:right;">
+        <button type="submit" class="btn-danger btn-sm" onclick="return confirm('Excluir este evento?')">Excluir evento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const MESES=["Janeiro","Fevereiro","Marco","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+let ano={{ ano }}, mes={{ mes }};
+const hoje=new Date();
+
+async function carregarMes(){
+  document.getElementById("tituloMes").textContent=MESES[mes-1]+" "+ano;
+  const r=await fetch(`{{ url_for('api_agenda_eventos') }}?ano=${ano}&mes=${mes}`);
+  const d=await r.json();
+  renderizar(d.eventos||[]);
+}
+
+function renderizar(eventos){
+  const grid=document.getElementById("agendaGrid");
+  const leg=document.getElementById("legendaSalas");
+  grid.innerHTML="";
+  ["Dom","Seg","Ter","Qua","Qui","Sex","Sab"].forEach(d=>{
+    const h=document.createElement("div");
+    h.className="agenda-dia-semana";h.textContent=d;grid.appendChild(h);
+  });
+  const prim=new Date(ano,mes-1,1);
+  const ult=new Date(ano,mes,0);
+  for(let i=0;i<prim.getDay();i++){
+    const v=document.createElement("div");v.className="agenda-dia agenda-dia-vazio";grid.appendChild(v);
+  }
+  const por={};
+  eventos.forEach(e=>{
+    const d=parseInt(e.data.split("-")[2]);
+    (por[d]=por[d]||[]).push(e);
+  });
+  const salas=new Map();
+  for(let d=1;d<=ult.getDate();d++){
+    const cel=document.createElement("div");
+    cel.className="agenda-dia";
+    const ehHoje=(d===hoje.getDate()&&mes===hoje.getMonth()+1&&ano===hoje.getFullYear());
+    if(ehHoje) cel.classList.add("agenda-dia-hoje");
+    const num=document.createElement("div");
+    num.className="agenda-dia-numero";num.textContent=d;cel.appendChild(num);
+    (por[d]||[]).forEach(e=>{
+      salas.set(e.sala,e.cor);
+      const chip=document.createElement("div");
+      chip.className="agenda-evento-chip";
+      if(e.tipo==="interno") chip.classList.add("agenda-evento-interno");
+      chip.style.background=e.cor;
+      chip.textContent=e.titulo;
+      chip.title=`${e.titulo} - ${e.sala}${e.hora_inicio?" ("+e.hora_inicio+")":""}`;
+      chip.onclick=()=>abrirModal(e);
+      cel.appendChild(chip);
+    });
+    grid.appendChild(cel);
+  }
+  leg.innerHTML="";
+  salas.forEach((cor,sala)=>{
+    const s=document.createElement("span");
+    s.className="agenda-legenda-item";
+    s.innerHTML=`<span class="agenda-legenda-bolinha" style="background:${cor}"></span>${sala}`;
+    leg.appendChild(s);
+  });
+}
+
+function abrirModal(e){
+  document.getElementById("editTitulo").value=e.titulo||"";
+  document.getElementById("editData").value=e.data||"";
+  document.getElementById("editHI").value=e.hora_inicio||"";
+  document.getElementById("editHF").value=e.hora_fim||"";
+  document.getElementById("editDesc").value=e.descricao||"";
+  document.getElementById("editTipo").value=e.tipo||"reserva";
+  const sel=document.getElementById("editSala");
+  for(let o of sel.options){ if(o.value===e.sala){ o.selected=true; break; } }
+  document.getElementById("formEditar").action=`/agenda/${e.id}/editar`;
+  document.getElementById("formExcluir").action=`/agenda/${e.id}/excluir`;
+  document.getElementById("modalEditar").classList.add("aberto");
+}
+function fecharModal(){
+  document.getElementById("modalEditar").classList.remove("aberto");
+}
+document.getElementById("modalEditar").addEventListener("click",function(ev){
+  if(ev.target===this) fecharModal();
+});
+document.getElementById("btnAnterior").addEventListener("click",()=>{
+  mes--;if(mes<1){mes=12;ano--;}carregarMes();
+});
+document.getElementById("btnSeguinte").addEventListener("click",()=>{
+  mes++;if(mes>12){mes=1;ano++;}carregarMes();
+});
+carregarMes();
+</script>
+{% endblock %}

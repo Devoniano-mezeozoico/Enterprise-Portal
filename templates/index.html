@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Inicio | {{ app_name }}{% endblock %}
+{% block content %}
+
+<section class="intranet-home-grid">
+  <div class="home-main-column">
+    <section class="card home-news-card home-fixed-news-card">
+      <div class="home-news-content">
+        <div class="home-news-primary">
+          <div class="section-head compact-head">
+            <h3><i class="fa-solid fa-newspaper"></i> Noticias em destaque</h3>
+            <a href="{{ url_for('noticias') }}">Ver todas</a>
+          </div>
+
+          {% if noticias %}
+          {% set destaque = noticias[0] %}
+          <article class="home-feature-news">
+            <div class="home-feature-text">
+              <a class="editoria" href="{{ url_for('noticia_detalhe', nid=destaque.id) }}">Ultima noticia</a>
+              <a class="feature-title" href="{{ url_for('noticia_detalhe', nid=destaque.id) }}">{{ destaque.titulo }}</a>
+              {% if destaque.resumo %}
+              <p>{{ destaque.resumo }}</p>
+              {% endif %}
+              <small>{{ destaque.autor }} &middot; {{ destaque.criado_em[:10] }}</small>
+            </div>
+            {% if destaque.anexo_eh_imagem %}
+            <a class="feature-thumb" href="{{ url_for('noticia_detalhe', nid=destaque.id) }}">
+              <img src="{{ url_for('noticias_midia', nid=destaque.id) }}" alt="{{ destaque.nome_anexo }}">
+            </a>
+            {% endif %}
+          </article>
+
+          <div class="home-news-list">
+            {% for n in noticias[1:] %}
+            <article class="home-news-row {% if n.anexo_eh_imagem %}has-thumb{% endif %}">
+              <div class="home-news-row-text">
+                <a href="{{ url_for('noticia_detalhe', nid=n.id) }}" class="news-word-link">{{ n.titulo }}</a>
+                {% if n.resumo %}<p>{{ n.resumo }}</p>{% endif %}
+                <small>{{ n.criado_em[:10] }}</small>
+              </div>
+              {% if n.anexo_eh_imagem %}
+              <a class="news-row-thumb" href="{{ url_for('noticia_detalhe', nid=n.id) }}">
+                <img src="{{ url_for('noticias_midia', nid=n.id) }}" alt="{{ n.nome_anexo }}">
+              </a>
+              {% endif %}
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="muted-text">Nenhuma noticia publicada ainda.</p>
+          {% endif %}
+        </div>
+
+        <aside class="ti-tips-panel">
+          <h3>Dicas da TI</h3>
+          <div class="ti-tips-list">
+            {% for dica in dicas_ti %}
+            <a href="{{ dica.url }}" class="ti-tip-link">
+              <strong>{{ dica.titulo }}</strong>
+              <span>{{ dica.tipo }}{% if dica.data %} &middot; {{ dica.data }}{% endif %}</span>
+            </a>
+            {% else %}
+            <p class="muted-text">Nenhuma dica de TI cadastrada ainda.</p>
+            {% endfor %}
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="home-indicators-row">
+      <article class="card home-indicator-card">
+        <h3><i class="fa-solid fa-chart-column"></i> Qtd. de atendimentos</h3>
+        <strong>{{ indicadores_home.total }}</strong>
+        <span>{{ setor_indicadores }}</span>
+        <div class="metric-delta {{ indicadores_home.comparativos.qtd.direcao }}">
+          <i class="{{ indicadores_home.comparativos.qtd.icone }}"></i>
+          {{ indicadores_home.comparativos.qtd.texto }}
+        </div>
+      </article>
+
+      <article class="card home-indicator-card">
+        <h3><i class="fa-solid fa-clock"></i> Tempo medio de resposta</h3>
+        <strong>{{ indicadores_home.tempo_medio_formatado }}</strong>
+        <span>{{ setor_indicadores }}</span>
+        <div class="metric-delta {{ indicadores_home.comparativos.tempo.direcao }}">
+          <i class="{{ indicadores_home.comparativos.tempo.icone }}"></i>
+          {{ indicadores_home.comparativos.tempo.texto }}
+        </div>
+      </article>
+
+      <article class="card home-indicator-card">
+        <h3><i class="fa-solid fa-face-smile"></i> Pesquisa de satisfacao</h3>
+        <strong>{{ indicadores_home.satisfacao_texto }}</strong>
+        <span>{{ setor_indicadores }}</span>
+        <div class="metric-delta {{ indicadores_home.comparativos.satisfacao.direcao }}">
+          <i class="{{ indicadores_home.comparativos.satisfacao.icone }}"></i>
+          {{ indicadores_home.comparativos.satisfacao.texto }}
+        </div>
+      </article>
+    </section>
+
+    {% if pode_ver_gerencial_atendimentos %}
+    <div class="home-management-link">
+      <a href="{{ url_for('admin_atendimentos') }}">Abrir visao gerencial de atendimentos</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <aside class="home-right-rail">
+    <section class="card home-side-card home-events-card">
+      <div class="section-head compact-head">
+        <h3><i class="fa-solid fa-calendar-check"></i> Proximos Eventos Internos</h3>
+        <a href="{{ url_for('agenda') }}">Calendario</a>
+      </div>
+      <div class="agenda-home-lista">
+        {% for evento in proximos_eventos_internos %}
+        <a href="{{ url_for('agenda') }}" class="agenda-home-item evento-interno-home">
+          <span>{{ evento.data_evento }}{% if evento.hora_inicio %} &middot; {{ evento.hora_inicio }}{% endif %}</span>
+          <strong>{{ evento.titulo }}</strong>
+          <small>{{ evento.sala }}</small>
+        </a>
+        {% else %}
+        <p class="muted-text">Nenhum evento interno proximo.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card home-side-card home-reservations-card">
+      <div class="section-head compact-head">
+        <h3><i class="fa-solid fa-calendar-day"></i> Reservas de hoje</h3>
+        <a href="{{ url_for('agenda') }}">Agenda</a>
+      </div>
+      <div class="agenda-home-lista">
+        {% for evento in agenda_hoje %}
+        <a href="{{ url_for('agenda') }}" class="agenda-home-item">
+          <span>{{ evento.sala }}</span>
+          <strong>{{ evento.titulo }}</strong>
+          <small>{% if evento.hora_inicio %}{{ evento.hora_inicio }}{% else %}Dia todo{% endif %}{% if evento.hora_fim %} - {{ evento.hora_fim }}{% endif %}</small>
+        </a>
+        {% else %}
+        <p class="muted-text">Nenhuma sala reservada hoje.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card home-side-card home-pops-card">
+      <div class="section-head compact-head">
+        <h3><i class="fa-solid fa-book-open"></i> POPs recentes</h3>
+        <a href="{{ url_for('pops') }}">Biblioteca</a>
+      </div>
+      <div class="pops-jornal-lista">
+        {% for pop in pops_recentes %}
+        <a href="{{ url_for('pops_visualizar', pid=pop.id) }}" class="pop-jornal-item">
+          <span>{{ pop.categoria }}</span>
+          <strong>{{ pop.titulo }}</strong>
+          <small>{{ pop.criado_em[:10] }}</small>
+        </a>
+        {% else %}
+        <p class="muted-text">Nenhum POP cadastrado ainda.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </aside>
+</section>
+
+<section class="home-support-grid {% if 'ia' not in abas_visiveis %}single-column{% endif %}">
+  <div class="card">
+    <h3 style="margin-bottom:14px;"><i class="fa-solid fa-star"></i> Acesso rapido</h3>
+    <div class="mini-apps-list">
+      {% for ap in apps_hub %}
+      <a href="{{ ap.url }}" class="mini-app-item" target="_blank" rel="noopener">
+        <i class="{{ ap.icone }}"></i>
+        {{ ap.nome }}
+      </a>
+      {% else %}
+      <p class="muted-text">Nenhum app cadastrado.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if 'ia' in abas_visiveis %}
+  <div class="card">
+    <h3><i class="fa-solid fa-robot"></i> {{ ai_assistant_name }}</h3>
+    <p class="muted-text" style="margin:12px 0;">
+      Consulte POPs, noticias e eventos da agenda com linguagem natural.
+    </p>
+    <a href="{{ url_for('ia') }}" class="btn-primary"><i class="fa-solid fa-comments"></i> Abrir {{ ai_assistant_name }}</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

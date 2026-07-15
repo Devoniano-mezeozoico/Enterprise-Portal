@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Auditoria | {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-title audit-title">
+  <div>
+    <h1>Auditoria do sistema</h1>
+    <p>Rastreabilidade de alterações relevantes, com usuário, unidade, IP e valores anterior/novo.</p>
+  </div>
+  <span class="audit-integrity {{ 'ok' if integridade_ok else 'error' }}">
+    <i class="fa-solid {{ 'fa-shield-check' if integridade_ok else 'fa-triangle-exclamation' }}"></i>
+    {{ 'Cadeia íntegra' if integridade_ok else 'Falha no evento #' ~ falha_id }}
+  </span>
+</div>
+
+<div class="card audit-filter-card">
+  <form method="GET" class="form-row audit-filters">
+    <div class="form-group">
+      <label>Módulo</label>
+      <select name="modulo">
+        <option value="">Todos</option>
+        {% for item in modulos %}<option value="{{ item }}" {{ 'selected' if item == modulo_selecionado }}>{{ item }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Unidade</label>
+      <select name="unidade_id">
+        <option value="">Todas / não definida</option>
+        {% for unidade in unidades %}<option value="{{ unidade.id }}" {{ 'selected' if unidade.id == unidade_selecionada }}>{{ unidade.nome }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group audit-search-field">
+      <label>Busca</label>
+      <input name="q" value="{{ termo }}" placeholder="Usuário, ação, módulo ou ID">
+    </div>
+    <div class="form-group audit-filter-action">
+      <button class="btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filtrar</button>
+    </div>
+  </form>
+</div>
+
+<div class="card audit-table-card">
+  <div class="audit-table-wrap">
+    <table class="tabela-acessos audit-table">
+      <thead>
+        <tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Módulo / registro</th><th>Unidade</th><th>Origem</th><th>Alterações</th></tr>
+      </thead>
+      <tbody>
+        {% for evento in eventos %}
+        <tr>
+          <td><strong>#{{ evento.id }}</strong><br><small>{{ evento.criado_em }}</small></td>
+          <td>{{ evento.usuario_nome or 'Sistema' }}<br><small>ID {{ evento.usuario_id or '—' }}</small></td>
+          <td><span class="audit-action">{{ evento.acao }}</span></td>
+          <td>{{ evento.modulo }}<br><small>{{ evento.registro_id or '—' }}</small></td>
+          <td>{{ evento.unidade_codigo or 'Não definida' }}</td>
+          <td>{{ evento.endereco_ip or '—' }}<br><small class="audit-agent">{{ evento.user_agent or '' }}</small></td>
+          <td>
+            <details class="audit-details">
+              <summary>Ver valores</summary>
+              <strong>Anterior</strong>
+              <pre>{{ evento.dados_anteriores or '—' }}</pre>
+              <strong>Novo</strong>
+              <pre>{{ evento.dados_novos or '—' }}</pre>
+              {% if evento.detalhes %}<strong>Detalhes</strong><pre>{{ evento.detalhes }}</pre>{% endif %}
+              <small>Hash: {{ evento.integridade_hash }}</small>
+            </details>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">Nenhum evento de auditoria encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
