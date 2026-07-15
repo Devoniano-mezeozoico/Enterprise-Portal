@@ -1,0 +1,1 @@
+Marcador inerte de arquivo. Nao contem codigo, credenciais ou dados operacionais.

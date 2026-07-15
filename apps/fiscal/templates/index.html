@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conferencia Fiscal</title>
+  <style>
+    :root {
+      --verde: #2ecc71;
+      --vermelho: #e74c3c;
+      --laranja: #e67e22;
+      --azul: #2980b9;
+      --azul-esc: #1a5276;
+      --cinza-bg: #f4f6f9;
+      --branco: #ffffff;
+      --titulo: #2c3e50;
+      --rodape: #dfe6e9;
+      --linha: #9aa7b3;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      min-width: 960px;
+      background: var(--cinza-bg);
+      color: #222;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+    header {
+      background: var(--azul);
+      color: #fff;
+      text-align: center;
+      padding: 10px 16px;
+    }
+    header h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: 0; }
+    header p { margin: 4px 0 0; color: #d6eaf8; font-size: 10px; }
+    main { flex: 1; display: flex; flex-direction: column; }
+    .mode-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 16px;
+    }
+    .mode-row span {
+      color: var(--titulo);
+      font-size: 10px;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .mode-button {
+      border: 0;
+      background: #bdc3c7;
+      color: #555;
+      padding: 4px 16px;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .mode-button.active { background: var(--azul); color: #fff; }
+    fieldset {
+      margin: 4px 16px 0;
+      border: 1px solid #aeb7c2;
+      padding: 8px 10px 10px;
+      background: var(--cinza-bg);
+    }
+    legend {
+      color: var(--titulo);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 0 6px;
+    }
+    .file-row {
+      display: grid;
+      grid-template-columns: 210px minmax(320px, 1fr) 96px;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0;
+    }
+    .file-row label { font-size: 10px; }
+    .file-shell {
+      height: 24px;
+      border: 1px solid #8b9bad;
+      background: #fff;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+    input[type=file] {
+      border: 0;
+      width: 100%;
+      height: 100%;
+      padding: 1px 4px;
+      font-size: 9px;
+      background: #fff;
+    }
+    .browse-look {
+      height: 24px;
+      border: 0;
+      background: #bdc3c7;
+      color: #111;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .hidden { display: none; }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 36px;
+      margin: 8px 16px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 31px;
+      border: 0;
+      padding: 0 18px;
+      color: #fff;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      border-radius: 0;
+    }
+    .btn.primary { background: var(--azul); }
+    .btn.export { background: #27ae60; }
+    .btn.export-teste { background: #8e44ad; }
+    .btn.disabled { opacity: .55; pointer-events: none; }
+    progress { width: 300px; height: 18px; accent-color: var(--azul); }
+    .status { color: #555; font-size: 9px; }
+    .alert {
+      margin: 0 16px 8px;
+      padding: 8px 10px;
+      background: #fadbd8;
+      border: 1px solid #d7a6a2;
+      color: #7b241c;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .alert.warn { background: #fff3cd; border-color: #e5cd7a; color: #7d6608; }
+    .alert ul { margin: 5px 0 0 18px; padding: 0; font-weight: 400; }
+    .notebook {
+      flex: 1;
+      margin: 0 16px 10px;
+      display: flex;
+      flex-direction: column;
+      min-height: 430px;
+    }
+    .tabs {
+      display: flex;
+      align-items: end;
+      gap: 1px;
+      border-bottom: 1px solid var(--linha);
+      padding-left: 2px;
+      min-height: 28px;
+    }
+    .tab-button {
+      min-height: 27px;
+      border: 1px solid var(--linha);
+      border-bottom: 0;
+      background: #eceff3;
+      padding: 5px 12px;
+      font-size: 10px;
+      font-family: Helvetica, Arial, sans-serif;
+      cursor: pointer;
+    }
+    .tab-button.active { background: #fff; font-weight: 700; padding-top: 6px; }
+    .tab-panel {
+      display: none;
+      flex: 1;
+      min-height: 400px;
+      background: #fff;
+      border-left: 1px solid var(--linha);
+      border-right: 1px solid var(--linha);
+      border-bottom: 1px solid var(--linha);
+      flex-direction: column;
+    }
+    .tab-panel.active { display: flex; }
+    .tab-header {
+      min-height: 26px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .tab-header span:last-child { font-weight: 400; }
+    .table-wrap { flex: 1; overflow: auto; background: #fff; }
+    table {
+      border-collapse: collapse;
+      width: max-content;
+      min-width: 100%;
+      font-size: 9px;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      height: 22px;
+      background: #f0f0f0;
+      border-right: 1px solid #d1d5db;
+      border-bottom: 1px solid #c9ced6;
+      padding: 4px 5px;
+      text-align: center;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    td {
+      height: 22px;
+      border-right: 1px solid #e1e5eb;
+      border-bottom: 1px solid #e6eaf0;
+      padding: 3px 5px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    td.left { text-align: left; }
+    tr.dif-pos td { background: #fff3cd; }
+    tr.dif-neg td { background: #fadbd8; }
+    tr.cancelado td { color: #aaa; }
+    .empty { padding: 16px; color: #666; font-size: 10px; }
+    footer {
+      min-height: 24px;
+      padding: 4px 8px;
+      background: var(--rodape);
+      color: var(--titulo);
+      text-align: center;
+      font-size: 9px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  {% set mode = selected_mode or "nfe" %}
+  <div class="app">
+    <header>
+      <h1>{{ result.title if result else "Conferencia de Entradas Fiscais - Modelo 55 (NF-e)" }}</h1>
+      <p>SAT (Excel) x Registro de Entradas (PDF)</p>
+    </header>
+
+    <main>
+      <form method="post" enctype="multipart/form-data" id="mainForm">
+        <div class="mode-row">
+          <span>Tipo de documento:</span>
+          <button type="button" class="mode-button {{ 'active' if mode == 'nfe' else '' }}" data-mode="nfe">NF-e (Modelo 55)</button>
+          <button type="button" class="mode-button {{ 'active' if mode == 'cte' else '' }}" data-mode="cte">CTe</button>
+          <button type="button" class="mode-button {{ 'active' if mode == 'teste' else '' }}" data-mode="teste">Comparacao Teste</button>
+          <input type="hidden" name="mode" id="modeInput" value="{{ mode }}">
+        </div>
+
+        <fieldset id="documentFields" class="{{ 'hidden' if mode == 'teste' else '' }}">
+          <legend>&nbsp; Arquivos &nbsp;</legend>
+          <div class="file-row">
+            <label id="excelLabel" for="excel_file">{{ "Excel SAT (CTe):" if mode == "cte" else "Excel SAT (Modelo 55):" }}</label>
+            <div class="file-shell"><input id="excel_file" name="excel_file" type="file" accept=".xlsx,.xls,.xlsm"></div>
+            <button class="browse-look" type="button" onclick="document.getElementById('excel_file').click()">Procurar...</button>
+          </div>
+          <div class="file-row">
+            <label for="pdf_file">PDF (Registro Entradas):</label>
+            <div class="file-shell"><input id="pdf_file" name="pdf_file" type="file" accept=".pdf,application/pdf"></div>
+            <button class="browse-look" type="button" onclick="document.getElementById('pdf_file').click()">Procurar...</button>
+          </div>
+        </fieldset>
+
+        <fieldset id="testeFields" class="{{ '' if mode == 'teste' else 'hidden' }}">
+          <legend>&nbsp; Comparacao Teste &nbsp;</legend>
+          <div class="file-row">
+            <label for="teste_file">Arquivo Teste (xls/xlsx/csv):</label>
+            <div class="file-shell"><input id="teste_file" name="teste_file" type="file" accept=".xls,.xlsx,.xlsm,.csv"></div>
+            <button class="browse-look" type="button" onclick="document.getElementById('teste_file').click()">Procurar...</button>
+          </div>
+          <div class="file-row">
+            <label for="rpt_file">Arquivo RPT (xls/xlsx/csv):</label>
+            <div class="file-shell"><input id="rpt_file" name="rpt_file" type="file" accept=".xls,.xlsx,.xlsm,.csv"></div>
+            <button class="browse-look" type="button" onclick="document.getElementById('rpt_file').click()">Procurar...</button>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button class="btn primary" type="submit" id="compareButton">{{ "Comparar Teste" if mode == "teste" else "Comparar" }}</button>
+          {% if download_url and mode != "teste" %}
+            <a class="btn export" href="{{ download_url }}">Exportar Excel</a>
+          {% else %}
+            <span class="btn export disabled">Exportar Excel</span>
+          {% endif %}
+          {% if download_url and mode == "teste" %}
+            <a class="btn export-teste" href="{{ download_url }}">Exportar Teste</a>
+          {% else %}
+            <span class="btn export-teste disabled">Exportar Teste</span>
+          {% endif %}
+          <progress value="{{ 100 if result else 0 }}" max="100"></progress>
+          <span class="status">{{ "Concluido!" if result and mode != "teste" else ("Comparacao Teste x RPT concluida." if result else "Selecione o modo, os arquivos e clique em Comparar.") }}</span>
+        </div>
+      </form>
+
+      {% if error %}
+        <div class="alert">{{ error }}</div>
+      {% endif %}
+
+      {% if dependency_warnings %}
+        <div class="alert warn">
+          Dependencias opcionais/necessarias
+          <ul>
+            {% for warning in dependency_warnings %}
+              <li>{{ warning }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% set tabs = result.tabs if result else [
+        {"id": "match", "title": "Encontrados nos dois", "color": "#2ecc71", "columns": [], "rows": [], "count": 0},
+        {"id": "excel", "title": "So no Excel (SAT)", "color": "#e74c3c", "columns": [], "rows": [], "count": 0},
+        {"id": "pdf", "title": "So no PDF", "color": "#e67e22", "columns": [], "rows": [], "count": 0}
+      ] %}
+      <section class="notebook">
+        <div class="tabs">
+          {% for tab in tabs %}
+            <button type="button" class="tab-button {{ 'active' if loop.first else '' }}" data-tab="{{ tab.id }}">{{ tab.title }}</button>
+          {% endfor %}
+        </div>
+
+        {% for tab in tabs %}
+          <div class="tab-panel {{ 'active' if loop.first else '' }}" id="tab-{{ tab.id }}">
+            <div class="tab-header" style="background: {{ tab.color }}">
+              <span>{{ tab.title }}</span>
+              <span>{{ tab.count }} registros</span>
+            </div>
+            {% if tab.rows %}
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      {% for col in tab.columns %}
+                        <th style="min-width: {{ col.width }}px" data-type="{{ 'number' if 'valor' in col.key or 'icms' in col.key or 'ipi' in col.key or 'val_' in col.key or 'diferenca' in col.key else 'text' }}">{{ col.label }}</th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in tab.rows %}
+                      <tr class="{{ row.row_class }}">
+                        {% for col in tab.columns %}
+                          <td class="{{ 'left' if col.key in ['nome', 'nome_emit', 'fornecedor'] else '' }}">{{ row[col.key] }}</td>
+                        {% endfor %}
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="empty">0 registros</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </section>
+    </main>
+
+    <footer>
+      {% if result and result.kind == "documento" %}
+        {{ result.summary.matched }} encontrados |
+        {{ result.summary.so_excel }} so no Excel |
+        {{ result.summary.so_pdf }} so no PDF ||
+        Valor conferido: {{ result.summary.valor_conferido }} |
+        Valor sem par no PDF: {{ result.summary.valor_sem_pdf }}
+      {% elif result and result.kind == "teste" %}
+        Batem: {{ result.summary.batidos }} |
+        Divergentes: {{ result.summary.divergentes }} |
+        So no Teste: {{ result.summary.so_teste }} |
+        So no RPT: {{ result.summary.so_rpt }}
+      {% endif %}
+    </footer>
+  </div>
+
+  <script>
+    const modeButtons = document.querySelectorAll(".mode-button");
+    const modeInput = document.getElementById("modeInput");
+    const docFields = document.getElementById("documentFields");
+    const testeFields = document.getElementById("testeFields");
+    const excelLabel = document.getElementById("excelLabel");
+    const compareButton = document.getElementById("compareButton");
+
+    function setMode(mode) {
+      modeInput.value = mode;
+      modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+      docFields.classList.toggle("hidden", mode === "teste");
+      testeFields.classList.toggle("hidden", mode !== "teste");
+      excelLabel.textContent = mode === "cte" ? "Excel SAT (CTe):" : "Excel SAT (Modelo 55):";
+      compareButton.textContent = mode === "teste" ? "Comparar Teste" : "Comparar";
+    }
+
+    modeButtons.forEach((button) => {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    });
+
+    const tabButtons = document.querySelectorAll(".tab-button");
+    const tabPanels = document.querySelectorAll(".tab-panel");
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        tabButtons.forEach((item) => item.classList.remove("active"));
+        tabPanels.forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(`tab-${button.dataset.tab}`).classList.add("active");
+      });
+    });
+
+    document.querySelectorAll("table").forEach((table) => {
+      table.querySelectorAll("th").forEach((th, index) => {
+        let asc = true;
+        th.addEventListener("click", () => {
+          const tbody = table.querySelector("tbody");
+          const rows = Array.from(tbody.querySelectorAll("tr"));
+          rows.sort((a, b) => {
+            const av = a.children[index].innerText.trim();
+            const bv = b.children[index].innerText.trim();
+            if (th.dataset.type === "number") {
+              const an = Number(av.replace("R$", "").replaceAll(",", "").replace("+", "").replace("-", "").trim()) || 0;
+              const bn = Number(bv.replace("R$", "").replaceAll(",", "").replace("+", "").replace("-", "").trim()) || 0;
+              return asc ? an - bn : bn - an;
+            }
+            return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+          });
+          asc = !asc;
+          rows.forEach((row) => tbody.appendChild(row));
+        });
+      });
+    });
+  </script>
+</body>
+</html>

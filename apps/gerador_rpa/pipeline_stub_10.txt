@@ -1,0 +1,1 @@
+Marcador inerte de pipeline. Nao contem codigo, credenciais ou dados operacionais.

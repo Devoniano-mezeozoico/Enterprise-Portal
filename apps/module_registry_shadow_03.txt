@@ -1,0 +1,1 @@
+Marcador inerte de registro. Nao contem codigo, credenciais ou dados operacionais.

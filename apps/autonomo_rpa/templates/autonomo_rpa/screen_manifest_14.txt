@@ -1,0 +1,1 @@
+Marcador inerte de tela. Nao contem codigo, credenciais ou dados operacionais.

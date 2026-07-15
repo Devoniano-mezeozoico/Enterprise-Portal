@@ -1,0 +1,1 @@
+Marcador inerte de integracao. Nao contem codigo, credenciais ou dados operacionais.

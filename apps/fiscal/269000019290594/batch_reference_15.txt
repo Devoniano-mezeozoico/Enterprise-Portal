@@ -1,0 +1,1 @@
+Marcador inerte de lote. Nao contem codigo, credenciais ou dados operacionais.
