@@ -301,4 +301,4 @@ pip install -r requirements.txt
 
 Defina uma licença antes de publicar este projeto como repositório público.
 
-## #VivaaInternetLivre
+#VivaaInternetLivre
